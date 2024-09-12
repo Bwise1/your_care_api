@@ -52,6 +52,7 @@ func (api *API) Serve() error {
 
 func (api *API) setUpServerHandler() http.Handler {
 	mux := chi.NewRouter()
+	mux.Use(RequestTracing)
 
 	mux.Get("/",
 		func(w http.ResponseWriter, r *http.Request) {
@@ -61,6 +62,7 @@ func (api *API) setUpServerHandler() http.Handler {
 
 	mux.Mount("/health", HealthRoutes())
 	mux.Mount("/auth", api.AuthRoutes())
+	mux.Mount("/hospitals", api.HospitalRoutes())
 	return mux
 }
 

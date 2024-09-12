@@ -9,8 +9,12 @@ import (
 )
 
 type Config struct {
-	Port int    `env:"PORT" default:"8080"`
-	Dsn  string `env:"DSN" default:"localhost:3306"`
+	Port          int    `env:"PORT" default:"8080"`
+	Dsn           string `env:"DSN" default:"localhost:3306"`
+	JwtSecret     string `env:"JWT_SECRET"`
+	JwtExpires    string `env:"JWT_EXPIRES"`
+	RefreshSecret string `env:"REFRESH_SECRET"`
+	RefreshExpiry string `env:"REFRESH_EXPIRY"`
 }
 
 func New() *Config {

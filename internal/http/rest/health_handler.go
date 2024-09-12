@@ -15,7 +15,7 @@ func HealthRoutes() chi.Router {
 			Message:    values.Success,
 			Status:     values.Success,
 			StatusCode: http.StatusOK,
-			Payload:    cuid.New(),
+			Data:       cuid.New(),
 		}
 	}))
 	return mux

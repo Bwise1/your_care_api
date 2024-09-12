@@ -17,7 +17,7 @@ type ServerResponse struct {
 	Status     string          `json:"status"`
 	StatusCode int             `json:"status_code"`
 	Context    context.Context `json:"context,omitempty"`
-	Payload    interface{}     `json:"payload,omitempty"`
+	Data       interface{}     `json:"data,omitempty"`
 }
 
 func respondWithJSONPayload(ctx *tracing.Context, data interface{}, status, message string) *ServerResponse {
@@ -31,7 +31,7 @@ func respondWithJSONPayload(ctx *tracing.Context, data interface{}, status, mess
 		Status:     values.Success,
 		StatusCode: util.StatusCode(status),
 		Message:    message,
-		Payload:    payload,
+		Data:       payload,
 	}
 }
 
@@ -39,7 +39,7 @@ func respondWithJSONPayload(ctx *tracing.Context, data interface{}, status, mess
 func respondWithError(err error, message, status string, tracingContext *tracing.Context) *ServerResponse {
 	// logger.Log.Error(err.Error(), message, status)
 	return &ServerResponse{
-		//Err:        err,
+		// Err:        err,
 		Message:    message,
 		Status:     status,
 		StatusCode: util.StatusCode(status),
