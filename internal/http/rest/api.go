@@ -63,6 +63,7 @@ func (api *API) setUpServerHandler() http.Handler {
 	mux.Mount("/health", HealthRoutes())
 	mux.Mount("/auth", api.AuthRoutes())
 	mux.Mount("/hospitals", api.HospitalRoutes())
+	mux.Mount("/appointments", api.AppointmentRoutes())
 	return mux
 }
 

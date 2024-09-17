@@ -14,17 +14,32 @@ type Appointment struct {
 }
 
 type LabTestAppointmentDetails struct {
-	ID            int     `json:"id"`
-	AppointmentID int     `json:"appointmentId"`
-	PickupType    string  `json:"pickupType"`
-	HomeLocation  *string `json:"homeLocation,omitempty"` // Optional for hospital tests
-	TestType      string  `json:"testType"`
+	ID                     int     `json:"id"`
+	AppointmentID          int     `json:"appointmentId"`
+	PickupType             string  `json:"pickupType"`
+	HomeLocation           *string `json:"homeLocation,omitempty"`
+	TestTypeID             int     `json:"testTypeId"`
+	HospitalID             *int    `json:"hospitalId,omitempty"`
+	AdditionalInstructions *string `json:"additionalInstructions,omitempty"`
 }
 
 type DoctorAppointmentDetails struct {
-	ID              int    `json:"id" db:"id"`
-	AppointmentID   int    `json:"appointment_id" db:"appointment_id"`
-	ReasonForVisit  string `json:"reason_for_visit" db:"reason_for_visit"`
-	Symptoms        string `json:"symptoms" db:"symptoms"`
-	AdditionalNotes string `json:"additional_notes" db:"additional_notes"`
+	ID              int     `json:"id"`
+	AppointmentID   int     `json:"appointment_id"`
+	ReasonForVisit  *string `json:"reason_for_visit"`
+	Symptoms        *string `json:"symptoms"`
+	AdditionalNotes *string `json:"additional_notes"`
+}
+
+type LabAppointmentReq struct {
+	UserID                 int     `json:"user"`
+	DoctorID               *int    `json:"doctor,omitempty"`   // Pointer to handle nullability
+	HospitalID             *int    `json:"hospital,omitempty"` // Pointer to handle nullability
+	LabTestID              int     `json:"lab_test"`
+	AppointmentDate        string  `json:"appointment_date"`
+	AppointmentTime        string  `json:"appointment_time"`
+	PickupType             string  `json:"pickup_type"`
+	HomeLocation           *string `json:"home_location,omitempty"` // Pointer to handle nullability
+	TestTypeID             int     `json:"test_type"`
+	AdditionalInstructions *string `json:"additional_instructions,omitempty"` // Pointer to handle nullability
 }

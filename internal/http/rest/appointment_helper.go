@@ -46,3 +46,25 @@ func (api *API) CreateDoctorAppointment_H(w http.ResponseWriter, r *http.Request
 		"data":    appointmentID,
 	})
 }
+
+func (api *API) CreateLabTestAppointmentH(appointment model.LabAppointmentReq) (model.Appointment, string, string, error) {
+
+	// Set context with a timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Create the lab test appointment
+	appointmentID, err := api.CreateLabTestAppointment(ctx, appointment)
+	if err != nil {
+		return model.Appointment{}, values.Error, fmt.Sprintf("%s [CrLaAp]", values.SystemErr), err
+	}
+
+	newAppointment := model.Appointment{
+		ID:     appointmentID,
+		UserID: appointment.UserID,
+		// DoctorID:  appointment.DoctorID,
+		// LabTestID: appointment.LabTestID,
+	}
+
+	return newAppointment, values.Created, "Lab test appointment created successfully", nil
+}

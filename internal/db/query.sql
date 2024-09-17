@@ -112,13 +112,16 @@ CREATE TABLE appointments (
 DROP TABLE IF EXISTS lab_test_appointment_details;
 CREATE TABLE lab_test_appointment_details (
     id INT PRIMARY KEY AUTO_INCREMENT,
-    appointment_id INT NOT NULL, -- Foreign key linking to the appointment table
-    pickup_type ENUM('home', 'hospital') NOT NULL, -- Type of pickup
+    appointment_id INT NOT NULL,  -- Foreign key linking to the appointment table
+    pickup_type ENUM('home', 'hospital') NOT NULL,  -- Type of pickup
     home_location TEXT, -- Address details for home pickup
-    test_type VARCHAR(100) NOT NULL, -- Test type details
-    FOREIGN KEY (appointment_id) REFERENCES appointments(id)
+    test_type_id INT NOT NULL,  -- Test type details
+    hospital_id INT, -- hospital id for hospital type of tests
+    additional_instructions TEXT,
+    FOREIGN KEY (appointment_id) REFERENCES appointments(id),
+    FOREIGN KEY (test_type_id) REFERENCES lab_tests(id),
+    FOREIGN KEY (hospital_id) REFERENCES hospitals(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 
 -- doctor appointment details table
 DROP TABLE IF EXISTS doctor_appointment_details;
