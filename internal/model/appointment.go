@@ -43,3 +43,16 @@ type LabAppointmentReq struct {
 	TestTypeID             int     `json:"test_type"`
 	AdditionalInstructions *string `json:"additional_instructions,omitempty"` // Pointer to handle nullability
 }
+
+type DoctorAppointmentReq struct {
+	UserID                 int     `json:"user"`
+	DoctorID               *int    `json:"doctor,omitempty"`   // Pointer to handle nullability
+	HospitalID             *int    `json:"hospital,omitempty"` // Pointer to handle nullability
+	LabTestID              int     `json:"lab_test"`
+	AppointmentDate        string  `json:"appointment_date"`
+	AppointmentTime        string  `json:"appointment_time"`
+	PickupType             string  `json:"pickup_type"`
+	HomeLocation           *string `json:"home_location,omitempty"` // Pointer to handle nullability
+	TestTypeID             int     `json:"test_type"`
+	AdditionalInstructions *string `json:"additional_instructions,omitempty"` // Pointer to handle nullability
+}

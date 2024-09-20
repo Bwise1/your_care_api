@@ -69,3 +69,9 @@ func (api *API) GetUserByEmail(ctx context.Context, email string) (model.User, e
 	}
 	return user, nil
 }
+
+func (api *API) GetUserBySocialID(provider, socialID string) (*model.User, error) {
+	// Implement database query to find user by social ID
+	// This is a placeholder function
+	return nil, nil
+}

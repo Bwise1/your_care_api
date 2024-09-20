@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/bwise1/your_care_api/util/tracing"
 	"github.com/bwise1/your_care_api/util/values"
@@ -34,6 +35,20 @@ func RequestTracing(next http.Handler) http.Handler {
 		}
 
 		ctx = context.WithValue(ctx, values.ContextTracingKey, tracingContext)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	}
+
+	return http.HandlerFunc(fn)
+}
+
+func RequireLogin(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		authorization := strings.Split(r.Header.Get("Authorization"), " ")
+		if len(authorization) != 2 {
+			writeErrorResponse(w, errors.New(values.NotAuthorised), values.NotAuthorised, "not-authorized")
+			return
+		}
+		ctx := context.WithValue(r.Context(), "token", authorization[1])
 		next.ServeHTTP(w, r.WithContext(ctx))
 	}
 
