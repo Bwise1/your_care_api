@@ -111,3 +111,11 @@ func (api *API) LoginUser(req model.UserLoginReq) (model.LoginResponse, string, 
 	}
 	return loggedUser, values.Success, "User authenticated successfully", nil
 }
+
+func (api *API) googleLogin() {
+
+}
+
+func (api *API) verifyEmail() {
+
+}
