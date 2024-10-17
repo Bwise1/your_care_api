@@ -68,3 +68,32 @@ func (api *API) CreateLabTestAppointmentH(appointment model.LabAppointmentReq) (
 
 	return newAppointment, values.Created, "Lab test appointment created successfully", nil
 }
+
+func (api *API) CreateLabTestAppointmentHelper(appointment model.AppointmentDetails, labAppt model.LabTestAppointment) (model.AppointmentDetails, string, string, error) {
+
+	// Set context with a timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	// Create the lab test appointment
+	appointmentID, err := api.CreateLabTestRepo(ctx, appointment, labAppt)
+	log.Println("appointmentID", appointmentID)
+	if err != nil {
+		return model.AppointmentDetails{}, values.Error, fmt.Sprintf("%s [CrLaAp]", values.SystemErr), err
+	}
+	newAppointment := model.AppointmentDetails{
+		ID:                  appointmentID,
+		UserID:              appointment.UserID,
+		AppointmentType:     appointment.AppointmentType,
+		AppointmentDatetime: appointment.AppointmentDatetime,
+		Status:              "pending",
+		LabTestDetails: &model.LabTestAppointment{
+			ID:                     labAppt.ID,
+			PickupType:             labAppt.PickupType,
+			HomeLocation:           labAppt.HomeLocation,
+			TestTypeID:             labAppt.TestTypeID,
+			HospitalID:             labAppt.HospitalID,
+			AdditionalInstructions: labAppt.AdditionalInstructions,
+		},
+	}
+	return newAppointment, values.Created, "Lab test appointment created successfully", nil
+}

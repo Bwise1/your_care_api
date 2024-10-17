@@ -117,5 +117,5 @@ func (api *API) googleLogin() {
 }
 
 func (api *API) verifyEmail() {
-
+	
 }
