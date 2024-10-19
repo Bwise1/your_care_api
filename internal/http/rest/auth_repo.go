@@ -70,6 +70,37 @@ func (api *API) GetUserByEmail(ctx context.Context, email string) (model.User, e
 	return user, nil
 }
 
+func (api *API) GetUserByID(ctx context.Context, id int) (model.User, error) {
+	var user model.User
+	stmt := `SELECT
+		id,
+		firstName,
+		lastName,
+		email,
+		password,
+		role_id,
+		isActive,
+		isEmailVerified
+	FROM users
+	WHERE id = ?`
+
+	err := api.Deps.DB.QueryRowContext(ctx, stmt, id).Scan(
+		&user.ID,
+		&user.FirstName,
+		&user.LastName,
+		&user.Email,
+		&user.Password,
+		&user.RoleID,
+		&user.IsActive,
+		&user.IsEmailVerified,
+	)
+	if err != nil {
+		log.Println("error getting user", err)
+		return model.User{}, err
+	}
+	return user, nil
+}
+
 func (api *API) GetUserBySocialID(provider, socialID string) (*model.User, error) {
 	// Implement database query to find user by social ID
 	// This is a placeholder function

@@ -97,3 +97,19 @@ func (api *API) CreateLabTestAppointmentHelper(appointment model.AppointmentDeta
 	}
 	return newAppointment, values.Created, "Lab test appointment created successfully", nil
 }
+
+func (api *API) FetchAllAppointments(userID int) ([]model.AppointmentDetails, string, string, error) {
+	// Set context with a timeout
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	log.Println("userID", userID)
+	// Fetch all appointments
+	appointments, err := api.FetchAllAppointmentsRepo(ctx, &userID)
+	if err != nil {
+		return nil, values.Error, fmt.Sprintf("%s [FtAlAp]", values.SystemErr), err
+	}
+
+	return appointments, values.Success, "Appointments fetched successfully", nil
+
+}

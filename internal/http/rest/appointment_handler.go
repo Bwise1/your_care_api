@@ -14,9 +14,14 @@ import (
 
 func (api *API) AppointmentRoutes() chi.Router {
 	mux := chi.NewRouter()
+
 	// mux.Method(http.MethodPost, "/login", Handler(api.Login))
 	mux.Method(http.MethodPost, "/lab-test", Handler(api.LabAppointment))
 	mux.Method(http.MethodPost, "/lab-test-appointment", Handler(api.CreateLabTestAppointmentHandler))
+	mux.Route("/", func(r chi.Router) {
+		r.Use(api.RequireLogin)
+		r.Method(http.MethodGet, "/", Handler(api.FetchAllAppointmentsHandler))
+	})
 	return mux
 }
 
@@ -66,7 +71,7 @@ func (api *API) CreateLabTestAppointmentHandler(_ http.ResponseWriter, r *http.R
 	appointment := &model.AppointmentDetails{
 		UserID:              req.UserID,
 		AppointmentType:     "lab_test",
-		AppointmentDatetime: appointmentDatetime,
+		AppointmentDatetime: &appointmentDatetime,
 		Status:              "pending",
 	}
 
@@ -89,4 +94,24 @@ func (api *API) CreateLabTestAppointmentHandler(_ http.ResponseWriter, r *http.R
 		StatusCode: util.StatusCode(status),
 		Data:       newAppointment,
 	}
+}
+
+func (api *API) FetchAllAppointmentsHandler(_ http.ResponseWriter, r *http.Request) *ServerResponse {
+
+	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+
+	userID := r.Context().Value("user_id")
+	log.Println("userID", userID)
+	appointments, status, message, err := api.FetchAllAppointments(userID.(int))
+	if err != nil {
+		return respondWithError(err, message, status, &tc)
+	}
+
+	return &ServerResponse{
+		Message:    message,
+		Status:     status,
+		StatusCode: util.StatusCode(status),
+		Data:       appointments,
+	}
+
 }

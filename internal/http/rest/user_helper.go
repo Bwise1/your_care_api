@@ -90,12 +90,12 @@ func (api *API) LoginUser(req model.UserLoginReq) (model.LoginResponse, string, 
 		return model.LoginResponse{}, values.NotAuthorised, "Invalid password provided", err
 	}
 
-	token, token_expires, err := api.createToken(user.ID, user.Email, util.UserAuth)
+	token, token_expires, err := api.createToken(user.ID)
 	if err != nil {
 		return model.LoginResponse{}, values.Error, fmt.Sprintf("%s [CrTk]", values.SystemErr), err
 	}
 
-	refresh, refresh_expires, err := api.createRefreshToken(user.ID, user.Email, util.UserAuth)
+	refresh, refresh_expires, err := api.createRefreshToken(user.ID)
 	if err != nil {
 		log.Println(err)
 		return model.LoginResponse{}, values.Error, fmt.Sprintf("%s [CrRF]", values.SystemErr), err
@@ -117,5 +117,5 @@ func (api *API) googleLogin() {
 }
 
 func (api *API) verifyEmail() {
-	
+
 }

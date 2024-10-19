@@ -18,15 +18,27 @@ type Appointment struct {
 }
 
 type AppointmentDetails struct {
-	ID                  int                 `json:"id"`
-	UserID              int                 `json:"user_id"`
-	AppointmentType     string              `json:"appointment_type"`
-	AppointmentDatetime time.Time           `json:"appointment_datetime"`
-	Status              string              `json:"status"`
-	CreatedAt           *time.Time          `json:"created_at,omitempty"`
-	UpdatedAt           *time.Time          `json:"updated_at,omitempty"`
-	DoctorDetails       *DoctorAppointment  `json:"doctor_details,omitempty"`
-	LabTestDetails      *LabTestAppointment `json:"lab_test_details,omitempty"`
+	ID                  int                 `db:"id" json:"id"`
+	UserID              int                 `db:"user_id" json:"user_id"`
+	AppointmentType     string              `db:"appointment_type" json:"appointment_type"`
+	AppointmentDatetime *time.Time          `db:"appointment_datetime" json:"appointment_datetime"`
+	Status              string              `db:"status" json:"status"`
+	CreatedAt           *time.Time          `db:"created_at,omitempty" json:"created_at,omitempty"`
+	UpdatedAt           *time.Time          `db:"updated_at,omitempty" json:"updated_at,omitempty"`
+	DoctorDetails       *DoctorAppointment  `db:"doctor_details,omitempty" json:"doctor_details,omitempty"`
+	LabTestDetails      *LabTestAppointment `db:"lab_test_details,omitempty" json:"lab_test_details,omitempty"`
+}
+
+type AppointmentRow struct {
+	ID                  int        `db:"id"`
+	UserID              int        `db:"user_id"`
+	AppointmentType     string     `db:"appointment_type"`
+	AppointmentDatetime *time.Time `db:"appointment_datetime"`
+	Status              string     `db:"status"`
+	CreatedAt           *time.Time `db:"created_at"`
+	UpdatedAt           *time.Time `db:"updated_at"`
+	DoctorDetailsJSON   []byte     `db:"doctor_details"`
+	LabTestDetailsJSON  []byte     `db:"lab_test_details"`
 }
 
 type DoctorAppointment struct {
@@ -110,5 +122,5 @@ type CreateLabTestAppointmentRequest struct {
 	PickupType             string  `json:"pickup_type"`
 	HomeLocation           *string `json:"home_location,omitempty"`
 	AdditionalInstructions *string `json:"additional_instructions,omitempty"`
-	HospitalID             *int    `json:"hospital_id,omitempty"`
+	HospitalID             *int    `json:"hospital,omitempty"`
 }
