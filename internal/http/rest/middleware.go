@@ -53,6 +53,12 @@ func (api *API) RequireLogin(next http.Handler) http.Handler {
 
 		claims, err := api.verifyToken(authorization[1], false)
 		if err != nil {
+			log.Println("error verifyig token", err.Error())
+			if err.Error() == "token expired" {
+				// Handle the expired token case
+				writeErrorResponse(w, err, values.TokenExpired, "token-expired")
+				return
+			}
 			writeErrorResponse(w, err, values.NotAuthorised, "invalid-token")
 			return
 		}

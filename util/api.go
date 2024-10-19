@@ -31,7 +31,7 @@ func StatusCode(status string) int {
 		return http.StatusConflict
 	case values.NotFound:
 		return http.StatusNotFound
-	case values.NotAuthorised:
+	case values.NotAuthorised, values.TokenExpired:
 		return http.StatusUnauthorized
 	case values.ActiveLogin:
 		return http.StatusForbidden

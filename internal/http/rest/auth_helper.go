@@ -77,6 +77,13 @@ func (api *API) verifyToken(tokenString string, isRefresh bool) (*TokenClaims, e
 		return []byte(secret), nil
 	})
 
+	// Specifically handle token expiration
+	if ve, ok := err.(*jwt.ValidationError); ok {
+		if ve.Errors&jwt.ValidationErrorExpired != 0 {
+			return nil, fmt.Errorf("token expired")
+		}
+	}
+
 	// Check for errors or invalid token
 	if err != nil || !token.Valid {
 		log.Println("error verifying token", err)

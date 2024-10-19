@@ -13,5 +13,6 @@ const ActiveLogin = "active-login"
 const Conflict = "conflict"
 const NotFound = "not-found"
 const NotAuthorised = "not-authorised"
+const TokenExpired = "token-expired"
 
 const SystemErr = "Unable to complete this request. Please try again"
