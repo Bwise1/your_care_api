@@ -2,7 +2,11 @@ package rest
 
 import (
 	"context"
+	"crypto/subtle"
+	"database/sql"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/bwise1/your_care_api/internal/model"
 )
@@ -16,10 +20,12 @@ func (api *API) CreateUserRepo(ctx context.Context, req model.UserRequest) error
 		email,
 		password,
 		dateOfBirth,
-		sex
-	)VALUES(?, ?, ?, ?, ?, ?)`
+		sex,
+		emailVerificationCode,
+		emailVerificationCodeExpires
+	)VALUES(?, ?, ?, ?, ?, ?,?,?)`
 
-	_, err := api.Deps.DB.ExecContext(ctx, stmt, req.FirstName, req.LastName, req.Email, req.Password, req.DateOfBirth, req.Sex)
+	_, err := api.Deps.DB.ExecContext(ctx, stmt, req.FirstName, req.LastName, req.Email, req.Password, req.DateOfBirth, req.Sex, req.EmailVerificationCode, req.EmailVerificationCodeExpires)
 	if err != nil {
 		log.Println("error creating user", err)
 		return err
@@ -105,4 +111,74 @@ func (api *API) GetUserBySocialID(provider, socialID string) (*model.User, error
 	// Implement database query to find user by social ID
 	// This is a placeholder function
 	return nil, nil
+}
+
+func (api *API) StoreRefreshToken(ctx context.Context, userID int, refreshToken string, expiry time.Time) error {
+	stmt := `UPDATE users SET refreshToken = ? WHERE id = ?`
+	_, err := api.Deps.DB.ExecContext(ctx, stmt, refreshToken, userID)
+	if err != nil {
+		log.Println("error storing refresh token", err)
+		return err
+	}
+	return nil
+}
+
+func (api *API) invalidateRefreshToken(ctx context.Context, userID int) error {
+	stmt := `UPDATE users SET refresh_token = NULL WHERE id = ?`
+	_, err := api.Deps.DB.ExecContext(ctx, stmt, userID)
+	if err != nil {
+		log.Println("error invalidating refresh token", err)
+		return err
+	}
+	return nil
+}
+
+func (api *API) verifyRefreshTokenInDB(ctx context.Context, userID int, refreshToken string) (bool, error) {
+	var token string
+	stmt := `SELECT refreshToken FROM users WHERE id = ?`
+
+	err := api.Deps.DB.QueryRowContext(ctx, stmt, userID).Scan(&token)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return false, nil
+		}
+		return false, fmt.Errorf("error verifying refresh token: %w", err)
+	}
+
+	// Use constant-time comparison
+	return subtle.ConstantTimeCompare([]byte(token), []byte(refreshToken)) == 1, nil
+}
+
+func (api *API) updateVerificationCode(ctx context.Context, userID int, code string, expiry time.Time) error {
+	stmt := `UPDATE users SET
+        emailVerificationCode = ?,
+        emailVerificationCodeExpires = ?
+    WHERE id = ?`
+
+	_, err := api.Deps.DB.ExecContext(ctx, stmt, code, expiry, userID)
+	if err != nil {
+		log.Println("error updating verification code:", err)
+		return err
+	}
+
+	return nil
+
+}
+func (api *API) UpdateUserPassword(ctx context.Context, userID int, hashedPassword string) error {
+	stmt := `UPDATE users SET password = ? WHERE id = ?`
+	result, err := api.Deps.DB.ExecContext(ctx, stmt, hashedPassword, userID)
+	if err != nil {
+		log.Println("error updating password:", err)
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return fmt.Errorf("no user found with ID: %d", userID)
+	}
+
+	return nil
 }

@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math/rand"
 	"net/http"
 	"net/mail"
+	"time"
 
 	"github.com/bwise1/your_care_api/util/tracing"
 	"github.com/bwise1/your_care_api/util/values"
@@ -66,4 +68,16 @@ func ValidEmail(email string) error {
 	}
 	_, err := mail.ParseAddress(email)
 	return err
+}
+
+func RandomString(length int, pool string) string {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	r.Seed(time.Now().UnixNano())
+
+	bytes := make([]byte, length)
+	for i := 0; i < length; i++ {
+		bytes[i] = pool[rand.Intn(len(pool))]
+	}
+
+	return string(bytes)
 }

@@ -47,12 +47,14 @@ type User struct {
 	UpdatedAt                     time.Time  `json:"updatedAt"`
 }
 type UserRequest struct {
-	FirstName   string `json:"first_name"`
-	LastName    string `json:"last_name"`
-	Email       string `json:"email"`
-	Password    string `json:"password"`
-	DateOfBirth string `json:"date_of_birth"`
-	Sex         string `json:"sex"`
+	FirstName                    string    `json:"first_name"`
+	LastName                     string    `json:"last_name"`
+	Email                        string    `json:"email"`
+	Password                     string    `json:"password"`
+	DateOfBirth                  string    `json:"date_of_birth"`
+	Sex                          string    `json:"sex"`
+	EmailVerificationCode        string    `json:"-"`
+	EmailVerificationCodeExpires time.Time `json:"-"`
 }
 
 type UserLoginReq struct {
@@ -70,4 +72,33 @@ type TokenInfo struct {
 type LoginResponse struct {
 	User  User      `json:"user"`
 	Token TokenInfo `json:"token"`
+}
+
+type EmailVerificationReq struct {
+	Email string `json:"email" validate:"required,email"`
+	Code  string `json:"code" validate:"required"`
+}
+
+type LogotRequest struct {
+	User  User      `json:"user"`
+	Token TokenInfo `json:"token"`
+}
+
+type RefreshTokenReq struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+type ResendVerificationReq struct {
+	Email string `json:"email" validate:"required,email"`
+}
+
+// model/user.go
+
+type ChangePasswordReq struct {
+	OldPassword string `json:"old_password" validate:"required,min=8"`
+	NewPassword string `json:"new_password" validate:"required,min=8"`
+}
+
+type EmailReq struct {
+	Email string `json:"email" validate:"required,email"`
 }

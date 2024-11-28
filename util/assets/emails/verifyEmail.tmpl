@@ -1,0 +1,32 @@
+{{define "subject"}}Verify Your Email Address{{end}}
+
+{{define "plainBody"}}
+Hello {{.Name}},
+
+Thank you for signing up! To complete your registration, please verify your email address by clicking the link below:
+{{.VerificationURL}}
+
+If you didn’t sign up, you can ignore this email.
+
+This link will expire in 1 hour.
+
+Thank you!
+{{end}}
+
+{{define "htmlBody"}}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  </head>
+  <body>
+    <p>Hello {{.Name}},</p>
+    <p>Thank you for signing up! To complete your registration, please verify your email address by clicking the link below:</p>
+    <p><a href="{{.VerificationURL}}">Verify My Email</a></p>
+    <p>If you didn’t sign up, you can ignore this email.</p>
+    <p>This link will expire in 1 hour.</p>
+    <p>Thank you!</p>
+  </body>
+</html>
+{{end}}

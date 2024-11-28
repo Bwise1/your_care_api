@@ -15,6 +15,20 @@ func (api *API) AuthRoutes() chi.Router {
 	mux := chi.NewRouter()
 	mux.Method(http.MethodPost, "/login", Handler(api.Login))
 	mux.Method(http.MethodPost, "/register", Handler(api.CreateUser))
+
+	mux.Method(http.MethodPost, "/token/refresh", Handler(api.TokenRefresh))
+
+	// mux.Method(http.MethodPost, "/verify-email", Handler(api.VerifyEmail))
+	mux.Method(http.MethodPost, "/resend-verification", Handler(api.ResendVerification))
+	// mux.Method(http.MethodPost, "/forgot-password", Handler(api.ForgotPassword))
+	// mux.Method(http.MethodPost, "/reset-password", Handler(api.ResetPassword))
+	mux.Group(func(r chi.Router) {
+		r.Use(api.RequireLogin)
+		r.Method(http.MethodPut, "/change-password", Handler(api.ChangePassword))
+		r.Method(http.MethodPost, "/logout", Handler(api.Logout))
+	})
+
+	// mux.Method(http.MethodDelete, "/delete-account", Handler(api.DeleteAccount))
 	return mux
 }
 
@@ -63,3 +77,173 @@ func (api *API) CreateUser(_ http.ResponseWriter, r *http.Request) *ServerRespon
 		Data:       user,
 	}
 }
+
+func (api *API) TokenRefresh(_ http.ResponseWriter, r *http.Request) *ServerResponse {
+	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+
+	var req model.RefreshTokenReq
+	if decodeErr := util.DecodeJSONBody(&tc, r.Body, &req); decodeErr != nil {
+		return respondWithError(decodeErr, "unable to parse token refresh request", values.BadRequestBody, &tc)
+	}
+
+	if req.RefreshToken == "" {
+		return respondWithError(nil, "refresh token is required", values.BadRequestBody, &tc)
+	}
+
+	token, status, message, err := api.RefreshToken(req)
+	if err != nil {
+		return respondWithError(err, message, status, &tc)
+	}
+
+	return &ServerResponse{
+		Message:    message,
+		Status:     status,
+		StatusCode: util.StatusCode(status),
+		Data:       token,
+	}
+}
+
+func (api *API) Logout(_ http.ResponseWriter, r *http.Request) *ServerResponse {
+	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+
+	userID := r.Context().Value("user_id")
+	// Invalidate the refresh token in the database
+	err := api.invalidateRefreshToken(r.Context(), userID.(int))
+	if err != nil {
+		return respondWithError(err, "failed to logout", values.Error, &tc)
+	}
+
+	return &ServerResponse{
+		Message:    "logged out successfully",
+		Status:     values.Success,
+		StatusCode: util.StatusCode(values.Success),
+	}
+}
+
+// // VerifyEmail handles email verification using a token
+// func (api *API) VerifyEmail(_ http.ResponseWriter, r *http.Request) *ServerResponse {
+// 	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+
+// 	var req model.EmailVerificationReq
+// 	if decodeErr := util.DecodeJSONBody(&tc, r.Body, &req); decodeErr != nil {
+// 		return respondWithError(decodeErr, "unable to parse verification request", values.BadRequestBody, &tc)
+// 	}
+
+// 	status, message, err := api.VerifyUserEmail(req)
+// 	if err != nil {
+// 		return respondWithError(err, message, status, &tc)
+// 	}
+
+// 	return &ServerResponse{
+// 		Message:    message,
+// 		Status:     status,
+// 		StatusCode: util.StatusCode(status),
+// 	}
+// }
+
+// ResendVerification handles resending verification email
+func (api *API) ResendVerification(_ http.ResponseWriter, r *http.Request) *ServerResponse {
+	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+
+	var req model.ResendVerificationReq
+	if decodeErr := util.DecodeJSONBody(&tc, r.Body, &req); decodeErr != nil {
+		return respondWithError(decodeErr, "unable to parse resend verification request", values.BadRequestBody, &tc)
+	}
+
+	status, message, err := api.ResendVerificationEmail(req)
+	if err != nil {
+		return respondWithError(err, message, status, &tc)
+	}
+
+	return &ServerResponse{
+		Message:    message,
+		Status:     status,
+		StatusCode: util.StatusCode(status),
+	}
+}
+
+// // ForgotPassword initiates the password reset process
+// func (api *API) ForgotPassword(_ http.ResponseWriter, r *http.Request) *ServerResponse {
+// 	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+
+// 	var req model.ForgotPasswordReq
+// 	if decodeErr := util.DecodeJSONBody(&tc, r.Body, &req); decodeErr != nil {
+// 		return respondWithError(decodeErr, "unable to parse forgot password request", values.BadRequestBody, &tc)
+// 	}
+
+// 	status, message, err := api.InitiatePasswordReset(req)
+// 	if err != nil {
+// 		return respondWithError(err, message, status, &tc)
+// 	}
+
+// 	return &ServerResponse{
+// 		Message:    message,
+// 		Status:     status,
+// 		StatusCode: util.StatusCode(status),
+// 	}
+// }
+
+// // ResetPassword handles password reset using a token
+// func (api *API) ResetPassword(_ http.ResponseWriter, r *http.Request) *ServerResponse {
+// 	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+
+// 	var req model.ResetPasswordReq
+// 	if decodeErr := util.DecodeJSONBody(&tc, r.Body, &req); decodeErr != nil {
+// 		return respondWithError(decodeErr, "unable to parse reset password request", values.BadRequestBody, &tc)
+// 	}
+
+// 	status, message, err := api.CompletePasswordReset(req)
+// 	if err != nil {
+// 		return respondWithError(err, message, status, &tc)
+// 	}
+
+// 	return &ServerResponse{
+// 		Message:    message,
+// 		Status:     status,
+// 		StatusCode: util.StatusCode(status),
+// 	}
+// }
+
+// ChangePassword allows authenticated users to change their password
+func (api *API) ChangePassword(_ http.ResponseWriter, r *http.Request) *ServerResponse {
+	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+
+	userID := r.Context().Value("user_id")
+
+	var req model.ChangePasswordReq
+	if decodeErr := util.DecodeJSONBody(&tc, r.Body, &req); decodeErr != nil {
+		return respondWithError(decodeErr, "unable to parse change password request", values.BadRequestBody, &tc)
+	}
+
+	status, message, err := api.ChangeUserPassword(userID.(int), req)
+	if err != nil {
+		return respondWithError(err, message, status, &tc)
+	}
+
+	return &ServerResponse{
+		Message:    message,
+		Status:     status,
+		StatusCode: util.StatusCode(status),
+	}
+}
+
+// // DeleteAccount allows users to delete their account
+// func (api *API) DeleteAccount(_ http.ResponseWriter, r *http.Request) *ServerResponse {
+// 	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+
+// 	var req model.DeleteAccountReq
+// 	if decodeErr := util.DecodeJSONBody(&tc, r.Body, &req); decodeErr != nil {
+// 		return respondWithError(decodeErr, "unable to parse delete account request", values.BadRequestBody, &tc)
+// 	}
+
+// 	status, message, err := api.RemoveAccount(req)
+// 	if err != nil {
+// 		return respondWithError(err, message, status, &tc)
+// 	}
+
+// 	return &ServerResponse{
+// 		Message:    message,
+// 		Status:     status,
+// 		StatusCode: util.StatusCode(status),
+// 	}
+// }

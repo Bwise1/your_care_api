@@ -38,7 +38,7 @@ func (m *Mailer) Send(recipient string, data interface{}, patterns ...string) er
 	}
 
 	// Create an email message
-	msg := composeEmail(recipient, "info@honeybloom.com", patterns, data)
+	msg := composeEmail(recipient, m.smtpFrom, patterns, data)
 
 	// Establish an SMTP connection and send the email
 	auth := smtp.PlainAuth("", m.smtpUser, m.smtpPassword, m.smtpHost)

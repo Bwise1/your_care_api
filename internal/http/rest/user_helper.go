@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/bwise1/your_care_api/internal/model"
 	"github.com/bwise1/your_care_api/util"
@@ -42,6 +43,26 @@ func (api *API) RegisterUser(req model.UserRequest) (model.User, string, string,
 	}
 
 	req.Password = passHash
+
+	verificationCode := util.RandomString(6, values.Numbers)
+
+	verificationCodeExpires := time.Now().Add(time.Minute * 10)
+
+	req.EmailVerificationCode = verificationCode
+	req.EmailVerificationCodeExpires = verificationCodeExpires
+
+	data := struct {
+		Name            string
+		VerificationURL string
+	}{
+		Name:            req.FirstName,
+		VerificationURL: "http://localhost:3000?token=" + verificationCode,
+	}
+	patterns := []string{"verifyEmail.tmpl"}
+	err = api.Deps.Mailer.Send(req.Email, data, patterns...)
+	if err != nil {
+		log.Println(err)
+	}
 
 	err = api.CreateUserRepo(context.TODO(), req)
 	if err != nil {
@@ -100,6 +121,13 @@ func (api *API) LoginUser(req model.UserLoginReq) (model.LoginResponse, string, 
 		log.Println(err)
 		return model.LoginResponse{}, values.Error, fmt.Sprintf("%s [CrRF]", values.SystemErr), err
 	}
+
+	err = api.StoreRefreshToken(ctx, user.ID, refresh, refresh_expires)
+	log.Println("user id", user.ID)
+	if err != nil {
+		return model.LoginResponse{}, values.Error, fmt.Sprintf("%s [StRF]", values.SystemErr), err
+	}
+
 	loggedUser := model.LoginResponse{
 		User: user,
 		Token: model.TokenInfo{
@@ -112,10 +140,88 @@ func (api *API) LoginUser(req model.UserLoginReq) (model.LoginResponse, string, 
 	return loggedUser, values.Success, "User authenticated successfully", nil
 }
 
-func (api *API) googleLogin() {
+func (api *API) RefreshToken(req model.RefreshTokenReq) (model.TokenInfo, string, string, error) {
 
+	var err error
+	var ctx = context.TODO()
+
+	tokenClaims, err := api.verifyToken(req.RefreshToken, true)
+
+	if err != nil {
+		return model.TokenInfo{}, values.NotAuthorised, "Invalid refresh token", err
+	}
+
+	newAccessToken, accessTokenExpiry, err := api.createToken(tokenClaims.UserID)
+	if err != nil {
+		return model.TokenInfo{}, values.Error, "Failed to create new access token", err
+	}
+
+	newRefreshToken, refreshTokenExpiry, err := api.createRefreshToken(tokenClaims.UserID)
+	if err != nil {
+		return model.TokenInfo{}, values.Error, "Failed to create new refresh token", err
+	}
+
+	err = api.StoreRefreshToken(ctx, tokenClaims.UserID, newRefreshToken, refreshTokenExpiry)
+	if err != nil {
+		return model.TokenInfo{}, values.Error, "Failed to store new refresh token", err
+	}
+
+	return model.TokenInfo{
+		AccessToken:        newAccessToken,
+		AccessTokenExpiry:  accessTokenExpiry,
+		RefreshToken:       newRefreshToken,
+		RefreshTokenExpiry: refreshTokenExpiry,
+	}, values.Success, "Token refreshed successfully", nil
 }
 
-func (api *API) verifyEmail() {
+func (api *API) ChangeUserPassword(userID int, req model.ChangePasswordReq) (string, string, error) {
+	// Get current user
+	user, err := api.GetUserByID(context.Background(), userID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return values.NotFound, "user not found", err
+		}
+		return values.Error, "error getting user", err
+	}
+
+	// Verify old password
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
+		return values.BadRequestBody, "invalid old password", err
+	}
+
+	// Hash new password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return values.Error, "error hashing password", err
+	}
+
+	// Update password in database
+	err = api.UpdateUserPassword(context.Background(), userID, string(hashedPassword))
+	if err != nil {
+		return values.Error, "error updating password", err
+	}
+
+	return values.Success, "password updated successfully", nil
+}
+
+func (api *API) CheckEmail(req model.EmailReq) (string, string, error) {
+	// Validate email format
+	if err := util.ValidEmail(req.Email); err != nil {
+		return values.BadRequestBody, "invalid email format", err
+	}
+
+	// Check if email exists
+	exists, err := api.EmailExists(context.Background(), req.Email)
+	if err != nil {
+		return values.Error, "error checking email", err
+	}
+	if !exists {
+		return values.NotFound, "email not found", nil
+	}
+
+	return values.Success, "email found", nil
+}
+
+func (api *API) googleLogin() {
 
 }
