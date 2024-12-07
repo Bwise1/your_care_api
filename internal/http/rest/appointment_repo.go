@@ -241,6 +241,106 @@ func (api *API) FetchAllAppointmentsRepo(ctx context.Context, userID *int) ([]mo
 	return appointments, nil
 }
 
+func (api *API) FetchFilteredAppointmentsRepo(ctx context.Context, filter model.AppointmentFilter) ([]model.AppointmentDetails, error) {
+
+	query := `
+		SELECT
+			a.id,
+			a.user_id,
+			a.appointment_type,
+			a.appointment_datetime,
+			a.status,
+			a.created_at,
+			a.updated_at,
+			CASE
+				WHEN a.appointment_type = 'doctor' THEN
+					JSON_OBJECT(
+						'id', da.id,
+						'doctor_id', da.doctor_id,
+						'reason_for_visit', da.reason_for_visit,
+						'symptoms', da.symptoms,
+						'additional_notes', da.additional_notes
+					)
+			END as doctor_details,
+			CASE
+				WHEN a.appointment_type = 'lab_test' THEN
+					JSON_OBJECT(
+						'id', la.id,
+						'test_type_id', la.test_type_id,
+						'pickup_type', la.pickup_type,
+						'home_location', la.home_location,
+						'hospital_id', la.hospital_id,
+						'additional_instructions', la.additional_instructions
+					)
+			END as lab_test_details
+		FROM
+			appointments a
+			LEFT JOIN doctor_appointments da ON a.id = da.appointment_id AND a.appointment_type = 'doctor'
+			LEFT JOIN lab_test_appointments la ON a.id = la.appointment_id AND a.appointment_type = 'lab_test'
+		 WHERE a.user_id = ?`
+
+	var args []interface{}
+	args = append(args, filter.UserID)
+
+	if filter.Date != "" {
+		query += " AND DATE(a.appointment_datetime) = ?"
+		args = append(args, filter.Date)
+	}
+
+	if filter.Upcoming {
+		query += " AND a.appointment_datetime > NOW()"
+		query += " ORDER BY a.appointment_datetime ASC"
+	} else if filter.History {
+		query += " AND a.appointment_datetime < NOW()"
+		query += " ORDER BY a.appointment_datetime DESC"
+	} else {
+		query += " ORDER BY a.appointment_datetime DESC"
+	}
+
+	log.Println("query", query)
+
+	log.Println("Arguments:")
+	for i, arg := range args {
+		log.Printf("  Arg[%d]: %v (type: %T)", i, arg, arg)
+	}
+	var rows []model.AppointmentRow
+	err := api.Deps.DB.SelectContext(ctx, &rows, query, args...)
+	if err != nil {
+		log.Println("error fetching appointments", err)
+		return nil, fmt.Errorf("failed to fetch appointments: %w", err)
+	}
+
+	appointments := make([]model.AppointmentDetails, len(rows))
+	for i, row := range rows {
+		appointments[i] = model.AppointmentDetails{
+			ID:                  row.ID,
+			UserID:              row.UserID,
+			AppointmentType:     row.AppointmentType,
+			AppointmentDatetime: row.AppointmentDatetime,
+			Status:              row.Status,
+			CreatedAt:           row.CreatedAt,
+			UpdatedAt:           row.UpdatedAt,
+		}
+
+		if row.AppointmentType == "doctor" && len(row.DoctorDetailsJSON) > 0 {
+			var doctorDetails model.DoctorAppointment
+			if err := json.Unmarshal(row.DoctorDetailsJSON, &doctorDetails); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal doctor details: %w", err)
+			}
+			appointments[i].DoctorDetails = &doctorDetails
+		}
+
+		if row.AppointmentType == "lab_test" && len(row.LabTestDetailsJSON) > 0 {
+			var labTestDetails model.LabTestAppointment
+			if err := json.Unmarshal(row.LabTestDetailsJSON, &labTestDetails); err != nil {
+				return nil, fmt.Errorf("failed to unmarshal lab test details: %w", err)
+			}
+			appointments[i].LabTestDetails = &labTestDetails
+		}
+	}
+	return appointments, nil
+}
+
 func (api *API) CreateDoctorAppointment(ctx context.Context, appointment model.Appointment, details model.DoctorAppointmentDetails) (int, error) {
 	var appointmentID int
 

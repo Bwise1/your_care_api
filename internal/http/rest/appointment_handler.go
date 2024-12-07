@@ -102,7 +102,16 @@ func (api *API) FetchAllAppointmentsHandler(_ http.ResponseWriter, r *http.Reque
 
 	userID := r.Context().Value("user_id")
 	log.Println("userID", userID)
-	appointments, status, message, err := api.FetchAllAppointments(userID.(int))
+
+	queryParams := r.URL.Query()
+	filter := model.AppointmentFilter{
+		UserID:   userID.(int),
+		Date:     queryParams.Get("date"),
+		Upcoming: queryParams.Get("upcoming") == "true",
+		History:  queryParams.Get("history") == "true",
+	}
+
+	appointments, status, message, err := api.FetchAllAppointments(filter)
 	if err != nil {
 		return respondWithError(err, message, status, &tc)
 	}

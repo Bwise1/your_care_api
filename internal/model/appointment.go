@@ -124,3 +124,10 @@ type CreateLabTestAppointmentRequest struct {
 	AdditionalInstructions *string `json:"additional_instructions,omitempty"`
 	HospitalID             *int    `json:"hospital,omitempty"`
 }
+
+type AppointmentFilter struct {
+	UserID   int    `json:"user_id"`
+	Date     string `json:"date"`
+	Upcoming bool   `json:"upcoming"`
+	History  bool   `json:"history"`
+}

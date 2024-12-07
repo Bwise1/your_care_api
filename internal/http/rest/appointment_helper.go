@@ -98,14 +98,16 @@ func (api *API) CreateLabTestAppointmentHelper(appointment model.AppointmentDeta
 	return newAppointment, values.Created, "Lab test appointment created successfully", nil
 }
 
-func (api *API) FetchAllAppointments(userID int) ([]model.AppointmentDetails, string, string, error) {
+func (api *API) FetchAllAppointments(filter model.AppointmentFilter) ([]model.AppointmentDetails, string, string, error) {
 	// Set context with a timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	log.Println("userID", userID)
+	log.Println("userID", filter.UserID)
 	// Fetch all appointments
-	appointments, err := api.FetchAllAppointmentsRepo(ctx, &userID)
+	// appointments, err := api.FetchAllAppointmentsRepo(ctx, &filter.UserID)
+	appointments, err := api.FetchFilteredAppointmentsRepo(ctx, filter)
+
 	if err != nil {
 		return nil, values.Error, fmt.Sprintf("%s [FtAlAp]", values.SystemErr), err
 	}
