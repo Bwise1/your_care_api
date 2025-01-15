@@ -15,6 +15,7 @@ func (api *API) AuthRoutes() chi.Router {
 	mux := chi.NewRouter()
 	mux.Method(http.MethodPost, "/login", Handler(api.Login))
 	mux.Method(http.MethodPost, "/register", Handler(api.CreateUser))
+	mux.Method(http.MethodPost, "/register-admin", Handler(api.CreateAdminUser))
 
 	mux.Method(http.MethodPost, "/token/refresh", Handler(api.TokenRefresh))
 
@@ -247,3 +248,25 @@ func (api *API) ChangePassword(_ http.ResponseWriter, r *http.Request) *ServerRe
 // 		StatusCode: util.StatusCode(status),
 // 	}
 // }
+
+func (api *API) CreateAdminUser(_ http.ResponseWriter, r *http.Request) *ServerResponse {
+	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+
+	log.Println(tc, "creating admin user")
+	var req model.UserRequest
+	if decodeErr := util.DecodeJSONBody(&tc, r.Body, &req); decodeErr != nil {
+		return respondWithError(decodeErr, "unable to parse registration request", values.BadRequestBody, &tc)
+	}
+
+	user, status, message, err := api.RegisterAdminUser(req)
+	if err != nil {
+		return respondWithError(err, message, status, &tc)
+	}
+
+	return &ServerResponse{
+		Message:    message,
+		Status:     status,
+		StatusCode: util.StatusCode(status),
+		Data:       user,
+	}
+}

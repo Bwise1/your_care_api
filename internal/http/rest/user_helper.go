@@ -225,3 +225,63 @@ func (api *API) CheckEmail(req model.EmailReq) (string, string, error) {
 func (api *API) googleLogin() {
 
 }
+
+func (api *API) RegisterAdminUser(req model.UserRequest) (model.User, string, string, error) {
+	var err error
+	var ctx = context.TODO()
+
+	req.Email = strings.Trim(req.Email, " ")
+	req.FirstName = strings.Trim(req.FirstName, " ")
+	req.LastName = strings.Trim(req.LastName, " ")
+
+	err = util.ValidEmail(req.Email)
+	if err != nil {
+		return model.User{}, values.NotAllowed, "Invalid email address provided", err
+	}
+
+	exists, err := api.EmailExists(ctx, req.Email)
+	if err != nil {
+		return model.User{}, values.Error, fmt.Sprintf("%s [EmCh]", values.SystemErr), err
+	}
+	if exists {
+		return model.User{}, values.Conflict, "User already exists. Please login", errors.New(values.Conflict)
+	}
+
+	passHash, err := util.HashPassword([]byte(req.Password))
+	if err != nil {
+		return model.User{}, values.Error, fmt.Sprintf("%s [HsPw]", values.SystemErr), err
+	}
+
+	req.Password = passHash
+
+	// verificationCode := util.RandomString(6, values.Numbers)
+	// verificationCodeExpires := time.Now().Add(time.Minute * 10)
+
+	// req.EmailVerificationCode = verificationCode
+	// req.EmailVerificationCodeExpires = verificationCodeExpires
+
+	// data := struct {
+	//     Name            string
+	//     VerificationURL string
+	// }{
+	//     Name:            req.FirstName,
+	//     VerificationURL: "http://localhost:3000?token=" + verificationCode,
+	// }
+	// patterns := []string{"verifyEmail.tmpl"}
+	// err = api.Deps.Mailer.Send(req.Email, data, patterns...)
+	// if err != nil {
+	//     log.Println(err)
+	// }
+
+	err = api.CreateAdminUserRepo(context.TODO(), req)
+	if err != nil {
+		return model.User{}, values.Error, fmt.Sprintf("%s [CrUs]", values.SystemErr), err
+	}
+
+	user := model.User{
+		FirstName: req.FirstName,
+		LastName:  req.LastName,
+		Email:     req.Email,
+	}
+	return user, values.Created, "Admin registration completed successfully", nil
+}

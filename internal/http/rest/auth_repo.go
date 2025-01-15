@@ -182,3 +182,23 @@ func (api *API) UpdateUserPassword(ctx context.Context, userID int, hashedPasswo
 
 	return nil
 }
+
+func (api *API) CreateAdminUserRepo(ctx context.Context, req model.UserRequest) error {
+	log.Println("creating admin user, ", req)
+
+	stmt := `INSERT INTO users(
+        firstName,
+        lastName,
+        email,
+        password,
+        sex,
+        role_id
+    )VALUES(?, ?, ?, ?, ?, ?, (SELECT id FROM roles WHERE name = 'admin'), ?, ?)`
+
+	_, err := api.Deps.DB.ExecContext(ctx, stmt, req.FirstName, req.LastName, req.Email, req.Password, "Other")
+	if err != nil {
+		log.Println("error creating admin user", err)
+		return err
+	}
+	return nil
+}
