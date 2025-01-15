@@ -1,0 +1,28 @@
+# Config file for Air
+# See https://github.com/cosmtrek/air for more details
+
+[build]
+# Binary name
+bin = "bin/main"
+# Watch these filename extensions
+include_ext = ["go", "tpl", "tmpl", "html"]
+# Ignore these filename extensions or directories
+exclude_dir = ["assets", "tmp", "vendor"]
+# Exclude specific files
+exclude_file = ["internal/db/query.sql"]
+# Custom build or running commands
+cmd = "go build -o ./bin/main ./cmd/main.go"
+# Custom build log file (default: stderr)
+log = "air.log"
+
+[log]
+# Show log time
+time = true
+
+[color]
+# Customize the color of log output
+main = "cyan"
+watcher = "yellow"
+build = "green"
+runner = "magenta"
+app = "blue"

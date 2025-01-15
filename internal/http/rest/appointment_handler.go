@@ -16,11 +16,12 @@ func (api *API) AppointmentRoutes() chi.Router {
 	mux := chi.NewRouter()
 
 	// mux.Method(http.MethodPost, "/login", Handler(api.Login))
-	mux.Method(http.MethodPost, "/lab-test", Handler(api.LabAppointment))
-	mux.Method(http.MethodPost, "/lab-test-appointment", Handler(api.CreateLabTestAppointmentHandler))
+
 	mux.Route("/", func(r chi.Router) {
 		r.Use(api.RequireLogin)
 		r.Method(http.MethodGet, "/", Handler(api.FetchAllAppointmentsHandler))
+		r.Method(http.MethodPost, "/lab-test-appointment", Handler(api.CreateLabTestAppointmentHandler))
+		r.Method(http.MethodPost, "/lab-test", Handler(api.LabAppointment))
 	})
 	return mux
 }
@@ -28,12 +29,17 @@ func (api *API) AppointmentRoutes() chi.Router {
 func (api *API) LabAppointment(_ http.ResponseWriter, r *http.Request) *ServerResponse {
 	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
 
+	userID := r.Context().Value("user_id")
+
 	var appointment model.LabAppointmentReq
 	if decodeErr := util.DecodeJSONBody(&tc, r.Body, &appointment); decodeErr != nil {
 		log.Println(decodeErr)
 		return respondWithError(decodeErr, "unable to parse lab appointment request", values.BadRequestBody, &tc)
 	}
+
+	appointment.UserID = userID.(int)
 	log.Println("appointment", appointment)
+
 	// var details model.LabTestAppointmentDetails
 	// if decodeErr := util.DecodeJSONBody(&tc, r.Body, &details); decodeErr != nil {
 	// 	log.Println(decodeErr)
@@ -56,6 +62,8 @@ func (api *API) LabAppointment(_ http.ResponseWriter, r *http.Request) *ServerRe
 func (api *API) CreateLabTestAppointmentHandler(_ http.ResponseWriter, r *http.Request) *ServerResponse {
 	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
 
+	userID := r.Context().Value("user_id")
+
 	var req model.CreateLabTestAppointmentRequest
 	if decodeErr := util.DecodeJSONBody(&tc, r.Body, &req); decodeErr != nil {
 		log.Println(decodeErr)
@@ -68,6 +76,9 @@ func (api *API) CreateLabTestAppointmentHandler(_ http.ResponseWriter, r *http.R
 		return respondWithError(err, "invalid date format", values.BadRequestBody, &tc)
 	}
 
+	//add user id to the req object
+	req.UserID = userID.(int)
+	// log.Println("userID", req.UserID)
 	appointment := &model.AppointmentDetails{
 		UserID:              req.UserID,
 		AppointmentType:     "lab_test",
