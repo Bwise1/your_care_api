@@ -69,6 +69,7 @@ func (api *API) CreateLabTestAppointmentHandler(_ http.ResponseWriter, r *http.R
 		log.Println(decodeErr)
 		return respondWithError(decodeErr, "unable to parse lab appointment request", values.BadRequestBody, &tc)
 	}
+	log.Println("req", req)
 	appointmentDatetime, err := time.Parse("2006-01-02 15:04:05", req.AppointmentDate)
 
 	log.Println("appointmentDate", appointmentDatetime)

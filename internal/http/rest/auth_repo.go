@@ -193,7 +193,7 @@ func (api *API) CreateAdminUserRepo(ctx context.Context, req model.UserRequest) 
         password,
         sex,
         role_id
-    )VALUES(?, ?, ?, ?, ?, ?, (SELECT id FROM roles WHERE name = 'admin'), ?, ?)`
+    )VALUES(?, ?, ?, ?, ?, (SELECT id FROM roles WHERE name = 'admin'))`
 
 	_, err := api.Deps.DB.ExecContext(ctx, stmt, req.FirstName, req.LastName, req.Email, req.Password, "Other")
 	if err != nil {
