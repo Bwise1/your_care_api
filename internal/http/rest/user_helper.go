@@ -254,25 +254,6 @@ func (api *API) RegisterAdminUser(req model.UserRequest) (model.User, string, st
 
 	req.Password = passHash
 
-	// verificationCode := util.RandomString(6, values.Numbers)
-	// verificationCodeExpires := time.Now().Add(time.Minute * 10)
-
-	// req.EmailVerificationCode = verificationCode
-	// req.EmailVerificationCodeExpires = verificationCodeExpires
-
-	// data := struct {
-	//     Name            string
-	//     VerificationURL string
-	// }{
-	//     Name:            req.FirstName,
-	//     VerificationURL: "http://localhost:3000?token=" + verificationCode,
-	// }
-	// patterns := []string{"verifyEmail.tmpl"}
-	// err = api.Deps.Mailer.Send(req.Email, data, patterns...)
-	// if err != nil {
-	//     log.Println(err)
-	// }
-
 	err = api.CreateAdminUserRepo(context.TODO(), req)
 	if err != nil {
 		return model.User{}, values.Error, fmt.Sprintf("%s [CrUs]", values.SystemErr), err
