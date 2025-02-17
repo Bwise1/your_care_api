@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/cors"
 
 	"github.com/bwise1/your_care_api/config"
 	deps "github.com/bwise1/your_care_api/internal/debs"
@@ -53,6 +54,17 @@ func (api *API) Serve() error {
 func (api *API) setUpServerHandler() http.Handler {
 	mux := chi.NewRouter()
 	mux.Use(RequestTracing)
+
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"}, // Replace with your allowed origins
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	})
+
+	mux.Use(corsMiddleware.Handler)
 
 	mux.Get("/",
 		func(w http.ResponseWriter, r *http.Request) {
