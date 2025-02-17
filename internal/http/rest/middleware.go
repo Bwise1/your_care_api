@@ -82,3 +82,23 @@ func (api *API) RequireLogin(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+func (api *API) RequireAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		userID := r.Context().Value("user_id").(int) // Get the user ID from the context
+
+		// Fetch the user from the database to get the role ID
+		user, err := api.GetUserByID(r.Context(), userID)
+		if err != nil {
+			writeErrorResponse(w, errors.New(values.NotAuthorised), values.NotAuthorised, "user not found")
+			return
+		}
+
+		if user.RoleID != 2 { // Assuming 2 is the role ID for admin
+			writeErrorResponse(w, errors.New(values.NotAuthorised), values.NotAuthorised, "admin access required")
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}

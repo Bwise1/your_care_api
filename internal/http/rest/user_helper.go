@@ -111,7 +111,7 @@ func (api *API) LoginUser(req model.UserLoginReq) (model.LoginResponse, string, 
 		return model.LoginResponse{}, values.NotAuthorised, "Invalid password provided", err
 	}
 
-	token, token_expires, err := api.createToken(user.ID)
+	token, token_expires, err := api.createToken(user.ID, user.Role)
 	if err != nil {
 		return model.LoginResponse{}, values.Error, fmt.Sprintf("%s [CrTk]", values.SystemErr), err
 	}
@@ -151,7 +151,7 @@ func (api *API) RefreshToken(req model.RefreshTokenReq) (model.TokenInfo, string
 		return model.TokenInfo{}, values.NotAuthorised, "Invalid refresh token", err
 	}
 
-	newAccessToken, accessTokenExpiry, err := api.createToken(tokenClaims.UserID)
+	newAccessToken, accessTokenExpiry, err := api.createToken(tokenClaims.UserID, tokenClaims.Role)
 	if err != nil {
 		return model.TokenInfo{}, values.Error, "Failed to create new access token", err
 	}

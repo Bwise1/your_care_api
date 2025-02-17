@@ -48,16 +48,18 @@ func (api *API) EmailExists(ctx context.Context, email string) (bool, error) {
 func (api *API) GetUserByEmail(ctx context.Context, email string) (model.User, error) {
 	var user model.User
 	stmt := `SELECT
-		id,
-		firstName,
-		lastName,
-		email,
-		password,
-		role_id,
-		isActive,
-		isEmailVerified
-	FROM users
-	WHERE email = ?`
+		u.id,
+        u.firstName,
+        u.lastName,
+        u.email,
+        u.password,
+        u.role_id,
+        r.name as role,
+        u.isActive,
+        u.isEmailVerified
+    FROM users u
+    JOIN roles r ON u.role_id = r.id
+    WHERE u.email = ?`
 
 	err := api.Deps.DB.QueryRowContext(ctx, stmt, email).Scan(
 		&user.ID,
@@ -66,6 +68,7 @@ func (api *API) GetUserByEmail(ctx context.Context, email string) (model.User, e
 		&user.Email,
 		&user.Password,
 		&user.RoleID,
+		&user.Role,
 		&user.IsActive,
 		&user.IsEmailVerified,
 	)
@@ -79,16 +82,18 @@ func (api *API) GetUserByEmail(ctx context.Context, email string) (model.User, e
 func (api *API) GetUserByID(ctx context.Context, id int) (model.User, error) {
 	var user model.User
 	stmt := `SELECT
-		id,
-		firstName,
-		lastName,
-		email,
-		password,
-		role_id,
-		isActive,
-		isEmailVerified
-	FROM users
-	WHERE id = ?`
+		u.id,
+        u.firstName,
+        u.lastName,
+        u.email,
+        u.password,
+        u.role_id,
+        r.name as role,
+        u.isActive,
+        u.isEmailVerified
+    FROM users u
+    JOIN roles r ON u.role_id = r.id
+    WHERE u.id = ?`
 
 	err := api.Deps.DB.QueryRowContext(ctx, stmt, id).Scan(
 		&user.ID,
@@ -97,6 +102,7 @@ func (api *API) GetUserByID(ctx context.Context, id int) (model.User, error) {
 		&user.Email,
 		&user.Password,
 		&user.RoleID,
+		&user.Role,
 		&user.IsActive,
 		&user.IsEmailVerified,
 	)

@@ -36,6 +36,7 @@ type User struct {
 	Height                        *float64   `json:"height,omitempty"`
 	Password                      string     `json:"-"`
 	RoleID                        int        `json:"roleId"`
+	Role                          string     `json:"role"`
 	IsActive                      bool       `json:"isActive"`
 	LastLogin                     *time.Time `json:"lastLogin,omitempty"`
 	RefreshToken                  *string    `json:"-"`

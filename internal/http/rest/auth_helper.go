@@ -15,12 +15,12 @@ import (
 
 type TokenClaims struct {
 	UserID int    `json:"sub"`
-	Type   string `json:"typ"`
+	Role   string `json:"role"`
 	Exp    int64  `json:"exp"`
 }
 
 // Simplified token creation
-func (api *API) createToken(id int) (string, time.Time, error) {
+func (api *API) createToken(id int, role string) (string, time.Time, error) {
 	exp_time, err := time.ParseDuration(api.Config.JwtExpires)
 	if err != nil {
 		return "", time.Time{}, err
@@ -28,10 +28,11 @@ func (api *API) createToken(id int) (string, time.Time, error) {
 	expiresAt := time.Now().Add(exp_time)
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"sub": id, // subject (user ID)
-		"exp": expiresAt.Unix(),
-		"iat": time.Now().Unix(),
-		"typ": "access",
+		"sub":  id, // subject (user ID)
+		"role": role,
+		"exp":  expiresAt.Unix(),
+		"iat":  time.Now().Unix(),
+		// "typ": "access",
 	})
 
 	tokenString, err := token.SignedString([]byte(api.Config.JwtSecret))
@@ -113,6 +114,12 @@ func (api *API) verifyToken(tokenString string, isRefresh bool) (*TokenClaims, e
 	}
 	userID := int(userIDFloat)
 
+	//extract role
+	role, ok := claims["role"].(string)
+	if !ok {
+		return nil, fmt.Errorf("invalid role")
+	}
+
 	// Verify the refresh token from the database if it is a refresh token
 	if isRefresh {
 		log.Println("verifying refresh token in database")
@@ -132,7 +139,7 @@ func (api *API) verifyToken(tokenString string, isRefresh bool) (*TokenClaims, e
 	// Return the extracted claims
 	return &TokenClaims{
 		UserID: userID,
-		Type:   tokenType,
+		Role:   role,
 		Exp:    int64(claims["exp"].(float64)),
 	}, nil
 }
