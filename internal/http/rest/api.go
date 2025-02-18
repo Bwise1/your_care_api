@@ -56,12 +56,22 @@ func (api *API) setUpServerHandler() http.Handler {
 	mux.Use(RequestTracing)
 
 	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins:   []string{"*"}, // Replace with your allowed origins
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowedOrigins: []string{
+			"*",
+		},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders: []string{
+			"Accept",
+			"Authorization",
+			"Content-Type",
+			"X-CSRF-Token",
+			"X-Requested-With",
+			"Origin",
+			"X-Request-Source", // Your custom header here
+		},
 		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		MaxAge:           300, // Maximum value not ignored by any of major browsers
+		AllowCredentials: false,
+		MaxAge:           300,
 	})
 
 	mux.Use(corsMiddleware.Handler)
