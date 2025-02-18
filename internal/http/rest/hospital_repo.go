@@ -63,3 +63,35 @@ func (api *API) GetLabTestsByHospital(ctx context.Context, hospitalID int) ([]mo
 
 	return tests, nil
 }
+
+func (api *API) CreateHospitalRepo(ctx context.Context, req model.Hospital) (int, error) {
+	stmt := `INSERT INTO hospitals (
+        name,
+        address,
+        phone,
+        email
+    ) VALUES (?, ?, ?, ?)`
+
+	result, err := api.Deps.DB.ExecContext(ctx, stmt, req.Name, req.Address, req.Phone, req.Email)
+	if err != nil {
+		return 0, err
+	}
+
+	hospitalID, err := result.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+
+	return int(hospitalID), nil
+}
+
+func (api *API) DeleteHospitalRepo(ctx context.Context, hospitalID int) error {
+	stmt := `DELETE FROM hospitals WHERE id = ?`
+
+	_, err := api.Deps.DB.ExecContext(ctx, stmt, hospitalID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
