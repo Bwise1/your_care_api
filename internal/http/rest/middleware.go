@@ -51,6 +51,7 @@ func (api *API) RequireLogin(next http.Handler) http.Handler {
 			return
 		}
 
+		log.Println(authorization[1])
 		claims, err := api.verifyToken(authorization[1], false)
 		if err != nil {
 			log.Println("error verifyig token", err.Error())

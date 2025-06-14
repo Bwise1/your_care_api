@@ -32,7 +32,7 @@ func (api *API) createToken(id int, role string) (string, time.Time, error) {
 		"role": role,
 		"exp":  expiresAt.Unix(),
 		"iat":  time.Now().Unix(),
-		// "typ": "access",
+		"typ":  "access",
 	})
 
 	tokenString, err := token.SignedString([]byte(api.Config.JwtSecret))
