@@ -58,3 +58,36 @@ func (api *API) DeleteHospital_H(hospitalID int) (string, string, error) {
 
 	return values.Success, "Hospital deleted successfully", nil
 }
+
+func (api *API) CreateHospitalLabTest_H(req model.HospitalLabTest) (model.HospitalLabTest, string, string, error) {
+	id, err := api.CreateHospitalLabTestRepo(context.TODO(), req)
+	if err != nil {
+		return model.HospitalLabTest{}, values.Error, "Failed to create hospital lab test", err
+	}
+	req.ID = id
+	return req, values.Created, "Hospital lab test created", nil
+}
+
+func (api *API) GetHospitalLabTests_H(hospitalID int) ([]model.HospitalLabTest, string, string, error) {
+	tests, err := api.GetAHospitalLabTestsRepo(context.TODO(), hospitalID)
+	if err != nil {
+		return nil, values.Error, "Failed to fetch hospital lab tests", err
+	}
+	return tests, values.Success, "Fetched hospital lab tests", nil
+}
+
+func (api *API) UpdateHospitalLabTest_H(req model.HospitalLabTest) (string, string, error) {
+	err := api.UpdateHospitalLabTestRepo(context.TODO(), req)
+	if err != nil {
+		return values.Error, "Failed to update hospital lab test", err
+	}
+	return values.Success, "Hospital lab test updated", nil
+}
+
+func (api *API) DeleteHospitalLabTest_H(id int) (string, string, error) {
+	err := api.DeleteHospitalLabTestRepo(context.TODO(), id)
+	if err != nil {
+		return values.Error, "Failed to delete hospital lab test", err
+	}
+	return values.Success, "Hospital lab test deleted", nil
+}

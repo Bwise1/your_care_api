@@ -21,6 +21,9 @@ func (api *API) HospitalRoutes() chi.Router {
 		r.Use(api.RequireAdmin)
 		r.Method(http.MethodPost, "/", Handler(api.CreateHospital))
 		r.Method(http.MethodDelete, "/{hospitalID}", Handler(api.DeleteHospital))
+		//under review
+		r.Method(http.MethodPut, "/lab-tests/{labTestID}", Handler(api.UpdateHospitalLabTest))
+		r.Method(http.MethodDelete, "/lab-tests/{labTestID}", Handler(api.DeleteHospitalLabTest))
 	})
 
 	return mux
@@ -106,4 +109,58 @@ func (api *API) DeleteHospital(_ http.ResponseWriter, r *http.Request) *ServerRe
 		Status:     status,
 		StatusCode: util.StatusCode(status),
 	}
+}
+
+func (api *API) CreateHospitalLabTest(w http.ResponseWriter, r *http.Request) *ServerResponse {
+	var req model.HospitalLabTest
+	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+	if err := util.DecodeJSONBody(&tc, r.Body, &req); err != nil {
+		return respondWithError(err, "Invalid request", values.BadRequestBody, &tc)
+	}
+	test, status, message, err := api.CreateHospitalLabTest_H(req)
+	if err != nil {
+		return respondWithError(err, message, status, &tc)
+	}
+	return &ServerResponse{Message: message, Status: status, StatusCode: util.StatusCode(status), Data: test}
+}
+
+func (api *API) GetAHospitalLabTests(w http.ResponseWriter, r *http.Request) *ServerResponse {
+	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+	hospitalIDStr := chi.URLParam(r, "hospitalID")
+	hospitalID, err := strconv.Atoi(hospitalIDStr)
+	if err != nil {
+		return respondWithError(err, "Invalid hospital ID", values.BadRequestBody, &tc)
+	}
+	tests, status, message, err := api.GetHospitalLabTests_H(hospitalID)
+	if err != nil {
+		return respondWithError(err, message, status, &tc)
+	}
+	return &ServerResponse{Message: message, Status: status, StatusCode: util.StatusCode(status), Data: tests}
+}
+
+func (api *API) UpdateHospitalLabTest(w http.ResponseWriter, r *http.Request) *ServerResponse {
+	var req model.HospitalLabTest
+	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+	if err := util.DecodeJSONBody(&tc, r.Body, &req); err != nil {
+		return respondWithError(err, "Invalid request", values.BadRequestBody, &tc)
+	}
+	status, message, err := api.UpdateHospitalLabTest_H(req)
+	if err != nil {
+		return respondWithError(err, message, status, &tc)
+	}
+	return &ServerResponse{Message: message, Status: status, StatusCode: util.StatusCode(status)}
+}
+
+func (api *API) DeleteHospitalLabTest(w http.ResponseWriter, r *http.Request) *ServerResponse {
+	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+	idStr := chi.URLParam(r, "labTestID")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return respondWithError(err, "Invalid lab test ID", values.BadRequestBody, &tc)
+	}
+	status, message, err := api.DeleteHospitalLabTest_H(id)
+	if err != nil {
+		return respondWithError(err, message, status, &tc)
+	}
+	return &ServerResponse{Message: message, Status: status, StatusCode: util.StatusCode(status)}
 }
