@@ -78,7 +78,14 @@ func (api *API) RequireLogin(next http.Handler) http.Handler {
 		// Add minimal information to context
 		ctx := r.Context()
 		ctx = context.WithValue(ctx, "user_id", claims.UserID)
-		ctx = context.WithValue(ctx, "user", user) // Add full user object if needed
+		ctx = context.WithValue(ctx, "user", user)
+
+		// Add is_admin or role to context
+		isAdmin := user.RoleID == 2 // Assuming 2 is admin
+
+		log.Println("mid admin ", user.RoleID)
+		ctx = context.WithValue(ctx, "is_admin", isAdmin)
+		ctx = context.WithValue(ctx, "role", user.Role)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

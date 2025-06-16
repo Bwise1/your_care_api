@@ -112,16 +112,36 @@ func (api *API) FetchAllAppointmentsHandler(_ http.ResponseWriter, r *http.Reque
 
 	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
 
-	userID := r.Context().Value("user_id")
-	log.Println("userID", userID)
+	isAdmin, _ := r.Context().Value("is_admin").(bool)
+
+	log.Println("admin? ", isAdmin)
 
 	queryParams := r.URL.Query()
 	filter := model.AppointmentFilter{
-		UserID:   userID.(int),
 		Date:     queryParams.Get("date"),
 		Upcoming: queryParams.Get("upcoming") == "true",
 		History:  queryParams.Get("history") == "true",
 	}
+
+	// var userIDPtr *int
+	if !isAdmin {
+		userIDVal := r.Context().Value("user_id")
+		userID, ok := userIDVal.(int)
+		if !ok {
+			return respondWithError(nil, "user_id not found in context", values.NotAuthorised, &tc)
+		}
+		filter.UserID = userID
+		// userIDPtr = &userID
+	}
+
+	// log.Println("userID", *userIDPtr)
+
+	// if !isAdmin && userIDPtr != nil {
+
+	// 	filter.UserID = *userIDPtr
+	// }
+
+	log.Println("Filters", filter.UserID)
 
 	appointments, status, message, err := api.FetchAllAppointments(filter)
 	if err != nil {
