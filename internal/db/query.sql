@@ -161,3 +161,16 @@ INSERT INTO lab_tests (hospital_id, name, description, price) VALUES
 (1, 'Vitamin D Test', 'Measures the level of Vitamin D in the blood.', 90.00),
 (1, 'Liver Function Test', 'Assesses the health and function of the liver.', 75.00),
 (1, 'COVID-19 PCR Test', 'Detects genetic material of the SARS-CoV-2 virus.', 120.00);
+
+
+CREATE TABLE hospital_lab_tests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    hospital_id INT NOT NULL,
+    lab_test_id INT NOT NULL,
+    name VARCHAR(100), -- hospital-specific name
+    price DECIMAL(10,2),
+    details TEXT,
+    FOREIGN KEY (hospital_id) REFERENCES hospitals(id),
+    FOREIGN KEY (lab_test_id) REFERENCES lab_tests(id),
+    UNIQUE (hospital_id, lab_test_id)
+);

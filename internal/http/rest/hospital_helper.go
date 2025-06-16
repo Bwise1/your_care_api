@@ -21,14 +21,14 @@ func (api *API) GetHospitals_H() ([]model.Hospital, string, string, error) {
 	return hospitals, values.Success, "Fetched hospitals successfully", nil
 }
 
-func (api *API) GetLabTestsByHospital_H(hospitalID int) ([]model.LabTest, string, string, error) {
+func (api *API) GetLabTestsByHospital_H(hospitalID int) ([]model.HospitalLabTest, string, string, error) {
 
 	var err error
 	var ctx = context.TODO()
 
 	tests, err := api.GetLabTestsByHospital(ctx, hospitalID)
 	if err != nil {
-		return []model.LabTest{}, values.Error, fmt.Sprintf("%s [GeLa]", values.SystemErr), err
+		return []model.HospitalLabTest{}, values.Error, fmt.Sprintf("%s [GeLa]", values.SystemErr), err
 	}
 
 	return tests, values.Success, "Fetched lab tests successfully", nil

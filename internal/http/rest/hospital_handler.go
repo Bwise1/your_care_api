@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -21,7 +22,9 @@ func (api *API) HospitalRoutes() chi.Router {
 		r.Use(api.RequireAdmin)
 		r.Method(http.MethodPost, "/", Handler(api.CreateHospital))
 		r.Method(http.MethodDelete, "/{hospitalID}", Handler(api.DeleteHospital))
+
 		//under review
+		r.Method(http.MethodPost, "/{hospitalID}/lab-tests", Handler(api.CreateHospitalLabTest))
 		r.Method(http.MethodPut, "/lab-tests/{labTestID}", Handler(api.UpdateHospitalLabTest))
 		r.Method(http.MethodDelete, "/lab-tests/{labTestID}", Handler(api.DeleteHospitalLabTest))
 	})
@@ -114,11 +117,22 @@ func (api *API) DeleteHospital(_ http.ResponseWriter, r *http.Request) *ServerRe
 func (api *API) CreateHospitalLabTest(w http.ResponseWriter, r *http.Request) *ServerResponse {
 	var req model.HospitalLabTest
 	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+
+	hospitalIDStr := chi.URLParam(r, "hospitalID")
+	hospitalID, err := strconv.Atoi(hospitalIDStr)
+	if err != nil {
+		return respondWithError(err, "Invalid hospital ID", values.BadRequestBody, &tc)
+	}
+
 	if err := util.DecodeJSONBody(&tc, r.Body, &req); err != nil {
 		return respondWithError(err, "Invalid request", values.BadRequestBody, &tc)
 	}
+	req.HospitalID = hospitalID
+
 	test, status, message, err := api.CreateHospitalLabTest_H(req)
 	if err != nil {
+
+		log.Println(err)
 		return respondWithError(err, message, status, &tc)
 	}
 	return &ServerResponse{Message: message, Status: status, StatusCode: util.StatusCode(status), Data: test}

@@ -89,7 +89,7 @@ func (api *API) CreateLabTestAppointment(ctx context.Context, appointment model.
 	return appointmentID, nil
 }
 
-func (api *API) CreateLabTestRepo(ctx context.Context, appointment model.AppointmentDetails, labApt model.LabTestAppointment) (int, error) {
+func (api *API) CreateLabTestAppRepo(ctx context.Context, appointment model.AppointmentDetails, labApt model.LabTestAppointment) (int, error) {
 	var appointmentID int
 	err := api.Deps.DB.RunInTx(ctx, func(tx *sqlx.Tx) error {
 		appointmentStmt := `

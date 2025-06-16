@@ -34,31 +34,63 @@ func (api *API) GetAllHospitals(ctx context.Context) ([]model.Hospital, error) {
 	return hospitals, nil
 }
 
-func (api *API) GetLabTestsByHospital(ctx context.Context, hospitalID int) ([]model.LabTest, error) {
+// func (api *API) GetLabTestsByHospital(ctx context.Context, hospitalID int) ([]model.LabTest, error) {
 
-	stmt := `SELECT
-		id,
-		hospital_id,
-		name,
-		description,
-		price
-	FROM lab_tests
-	WHERE hospital_id = ?`
+// 	stmt := `SELECT
+// 		id,
+// 		hospital_id,
+// 		name,
+// 		description,
+// 		price
+// 	FROM lab_tests
+// 	WHERE hospital_id = ?`
+
+// 	rows, err := api.Deps.DB.QueryContext(ctx, stmt, hospitalID)
+// 	if err != nil {
+// 		return []model.LabTest{}, err
+// 	}
+// 	defer rows.Close()
+
+// 	var tests []model.LabTest
+// 	for rows.Next() {
+// 		var t model.LabTest
+// 		err := rows.Scan(&t.ID, &t.HospitalID, &t.Name, &t.Description, &t.Price)
+// 		if err != nil {
+// 			return nil, err
+// 		}
+// 		tests = append(tests, t)
+// 	}
+
+// 	return tests, nil
+// }
+
+func (api *API) GetLabTestsByHospital(ctx context.Context, hospitalID int) ([]model.HospitalLabTest, error) {
+	stmt := `SELECT id,
+				hospital_id,
+				lab_test_id,
+				name, price,
+				details
+			FROM hospital_lab_tests WHERE hospital_id = ?`
 
 	rows, err := api.Deps.DB.QueryContext(ctx, stmt, hospitalID)
 	if err != nil {
-		return []model.LabTest{}, err
+		return []model.HospitalLabTest{}, err
 	}
 	defer rows.Close()
 
-	var tests []model.LabTest
+	var tests []model.HospitalLabTest
 	for rows.Next() {
-		var t model.LabTest
-		err := rows.Scan(&t.ID, &t.HospitalID, &t.Name, &t.Description, &t.Price)
+		var t model.HospitalLabTest
+		err := rows.Scan(&t.ID, &t.HospitalID, &t.LabTestID, &t.Name, &t.Price, &t.Details)
 		if err != nil {
-			return nil, err
+			return []model.HospitalLabTest{}, err
 		}
 		tests = append(tests, t)
+	}
+
+	// Always return an empty slice if no rows found (not nil)
+	if tests == nil {
+		return []model.HospitalLabTest{}, nil
 	}
 
 	return tests, nil

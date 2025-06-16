@@ -51,7 +51,7 @@ func (api *API) RequireLogin(next http.Handler) http.Handler {
 			return
 		}
 
-		log.Println(authorization[1])
+		// log.Println(authorization[1])
 		claims, err := api.verifyToken(authorization[1], false)
 		if err != nil {
 			log.Println("error verifyig token", err.Error())
@@ -88,12 +88,15 @@ func (api *API) RequireAdmin(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		userID := r.Context().Value("user_id").(int) // Get the user ID from the context
 
+		// log.Println("Heree")
 		// Fetch the user from the database to get the role ID
 		user, err := api.GetUserByID(r.Context(), userID)
 		if err != nil {
 			writeErrorResponse(w, errors.New(values.NotAuthorised), values.NotAuthorised, "user not found")
 			return
 		}
+
+		// log.Println(user)
 
 		if user.RoleID != 2 { // Assuming 2 is the role ID for admin
 			writeErrorResponse(w, errors.New(values.NotAuthorised), values.NotAuthorised, "admin access required")

@@ -75,7 +75,7 @@ func (api *API) CreateLabTestAppointmentHelper(appointment model.AppointmentDeta
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	// Create the lab test appointment
-	appointmentID, err := api.CreateLabTestRepo(ctx, appointment, labAppt)
+	appointmentID, err := api.CreateLabTestAppRepo(ctx, appointment, labAppt)
 	log.Println("appointmentID", appointmentID)
 	if err != nil {
 		return model.AppointmentDetails{}, values.Error, fmt.Sprintf("%s [CrLaAp]", values.SystemErr), err
