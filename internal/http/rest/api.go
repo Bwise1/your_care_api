@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/cors"
 
 	"github.com/bwise1/your_care_api/config"
 	deps "github.com/bwise1/your_care_api/internal/debs"
@@ -55,26 +54,26 @@ func (api *API) setUpServerHandler() http.Handler {
 	mux := chi.NewRouter()
 	mux.Use(RequestTracing)
 
-	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins: []string{
-			"*",
-		},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowedHeaders: []string{
-			"Accept",
-			"Authorization",
-			"Content-Type",
-			"X-CSRF-Token",
-			"X-Requested-With",
-			"Origin",
-			"X-Request-Source", // Your custom header here
-		},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: false,
-		MaxAge:           300,
-	})
+	// corsMiddleware := cors.New(cors.Options{
+	// 	AllowedOrigins: []string{
+	// 		"*",
+	// 	},
+	// 	AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+	// 	AllowedHeaders: []string{
+	// 		"Accept",
+	// 		"Authorization",
+	// 		"Content-Type",
+	// 		"X-CSRF-Token",
+	// 		"X-Requested-With",
+	// 		"Origin",
+	// 		"X-Request-Source", // Your custom header here
+	// 	},
+	// 	ExposedHeaders:   []string{"Link"},
+	// 	AllowCredentials: false,
+	// 	MaxAge:           300,
+	// })
 
-	mux.Use(corsMiddleware.Handler)
+	// mux.Use(corsMiddleware.Handler)
 
 	mux.Get("/",
 		func(w http.ResponseWriter, r *http.Request) {
