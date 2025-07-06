@@ -53,7 +53,6 @@ func (api *API) Serve() error {
 
 func (api *API) setUpServerHandler() http.Handler {
 	mux := chi.NewRouter()
-	mux.Use(RequestTracing)
 
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins: []string{
@@ -77,6 +76,7 @@ func (api *API) setUpServerHandler() http.Handler {
 
 	mux.Use(corsMiddleware.Handler)
 
+	mux.Use(RequestTracing)
 	mux.Get("/",
 		func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Hello, World!"))
