@@ -17,6 +17,15 @@ func (api *API) GetAllLabTestsHelper() ([]model.LabTest, string, string, error) 
 	return tests, values.Success, "Fetched lab tests", nil
 }
 
+func (api *API) GetAvailableTestsForSelectionHelper() ([]model.TestForSelection, string, string, error) {
+	tests, err := api.GetAvailableTestsForSelectionRepo(context.TODO())
+	if err != nil {
+		log.Println(err)
+		return nil, values.Error, "Failed to fetch available tests", err
+	}
+	return tests, values.Success, "Fetched available tests for selection", nil
+}
+
 func (api *API) CreateLabTestHelper(req model.LabTest) (model.LabTest, string, string, error) {
 	id, err := api.CreateLabTestRepo(context.TODO(), req)
 	if err != nil {

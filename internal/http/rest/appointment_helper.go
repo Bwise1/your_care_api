@@ -115,3 +115,191 @@ func (api *API) FetchAllAppointments(filter model.AppointmentFilter) ([]model.Ap
 	return appointments, values.Success, "Appointments fetched successfully", nil
 
 }
+
+// Admin Helper Functions
+
+func (api *API) AdminFetchAllAppointmentsHelper(filter model.AdminAppointmentFilter) ([]model.AppointmentDetails, string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	appointments, err := api.AdminFetchAllAppointmentsRepo(ctx, filter)
+	if err != nil {
+		return nil, values.Error, fmt.Sprintf("%s [AdFtAlAp]", values.SystemErr), err
+	}
+
+	return appointments, values.Success, "Appointments fetched successfully", nil
+}
+
+func (api *API) AdminGetAppointmentDetailsHelper(appointmentID int) (model.AppointmentDetails, string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Use the same simple query as the working list function
+	appointment, err := api.AdminGetAppointmentDetailsRepo(ctx, appointmentID)
+	if err != nil {
+		return model.AppointmentDetails{}, values.Error, fmt.Sprintf("%s [AdGtApDt]", values.SystemErr), err
+	}
+
+	return appointment, values.Success, "Appointment details retrieved successfully", nil
+}
+
+func (api *API) AdminConfirmAppointmentHelper(appointmentID, adminID int, req model.AdminAppointmentAction) (string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := api.UpdateAppointmentStatus(ctx, appointmentID, string(model.StatusConfirmed), req.Notes, &adminID)
+	if err != nil {
+		return values.Error, fmt.Sprintf("%s [AdCfAp]", values.SystemErr), err
+	}
+
+	return values.Success, "Appointment confirmed successfully", nil
+}
+
+func (api *API) AdminRejectAppointmentHelper(appointmentID, adminID int, req model.AdminAppointmentAction) (string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := api.RejectAppointment(ctx, appointmentID, req.RejectionReason, req.Notes, &adminID)
+	if err != nil {
+		return values.Error, fmt.Sprintf("%s [AdRjAp]", values.SystemErr), err
+	}
+
+	return values.Success, "Appointment rejected", nil
+}
+
+func (api *API) AdminRescheduleAppointmentHelper(appointmentID, adminID int, req model.AdminAppointmentAction) (string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if req.ProposedDate == nil || req.ProposedTime == nil {
+		return values.BadRequestBody, "Proposed date and time are required", fmt.Errorf("missing proposed date/time")
+	}
+
+	err := api.CreateRescheduleOffer(ctx, appointmentID, *req.ProposedDate, *req.ProposedTime, req.Notes, &adminID)
+	if err != nil {
+		return values.Error, fmt.Sprintf("%s [AdRsAp]", values.SystemErr), err
+	}
+
+	return values.Success, "Reschedule offer created", nil
+}
+
+func (api *API) AdminCancelAppointmentHelper(appointmentID, adminID int, req model.AdminAppointmentAction) (string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := api.UpdateAppointmentStatus(ctx, appointmentID, string(model.StatusCanceled), req.Notes, &adminID)
+	if err != nil {
+		return values.Error, fmt.Sprintf("%s [AdCnAp]", values.SystemErr), err
+	}
+
+	return values.Success, "Appointment canceled", nil
+}
+
+func (api *API) AdminUpdateNotesHelper(appointmentID int, notes string) (string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := api.UpdateAppointmentAdminNotes(ctx, appointmentID, notes)
+	if err != nil {
+		return values.Error, fmt.Sprintf("%s [AdUpNt]", values.SystemErr), err
+	}
+
+	return values.Success, "Notes updated successfully", nil
+}
+
+// User Helper Functions
+
+func (api *API) GetAppointmentDetailsHelper(appointmentID, userID int) (model.UserAppointmentResponse, string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Use the same simple query as the working list function
+	appointment, err := api.GetDetailedAppointmentRepo(ctx, appointmentID, &userID)
+	if err != nil {
+		return model.UserAppointmentResponse{}, values.Error, fmt.Sprintf("%s [GtApDt]", values.SystemErr), err
+	}
+
+	statusHistory, _ := api.GetAppointmentStatusHistory(appointmentID)
+	nextActions := api.getNextActionsForUser(model.AppointmentStatus(appointment.Status))
+
+	response := model.UserAppointmentResponse{
+		//Appointment:   appointment,
+		StatusHistory: statusHistory,
+		NextActions:   nextActions,
+	}
+
+	return response, values.Success, "Appointment details retrieved successfully", nil
+}
+
+func (api *API) AcceptRescheduleOfferHelper(appointmentID, userID, offerID int) (string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := api.AcceptRescheduleOfferRepo(ctx, appointmentID, userID, offerID)
+	if err != nil {
+		return values.Error, fmt.Sprintf("%s [AcRsOf]", values.SystemErr), err
+	}
+
+	return values.Success, "Reschedule offer accepted", nil
+}
+
+func (api *API) RejectRescheduleOfferHelper(appointmentID, userID, offerID int, reason *string) (string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := api.RejectRescheduleOfferRepo(ctx, appointmentID, userID, offerID, reason)
+	if err != nil {
+		return values.Error, fmt.Sprintf("%s [RjRsOf]", values.SystemErr), err
+	}
+
+	return values.Success, "Reschedule offer rejected", nil
+}
+
+func (api *API) CancelAppointmentHelper(appointmentID, userID int) (string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	err := api.UpdateAppointmentStatus(ctx, appointmentID, string(model.StatusCanceled), nil, &userID)
+	if err != nil {
+		return values.Error, fmt.Sprintf("%s [CnAp]", values.SystemErr), err
+	}
+
+	return values.Success, "Appointment canceled successfully", nil
+}
+
+func (api *API) GetAppointmentStatusHistory(appointmentID int) ([]model.AppointmentStatusLog, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	return api.GetAppointmentStatusHistoryRepo(ctx, appointmentID)
+}
+
+func (api *API) AdminGetAppointmentHistoryHelper(appointmentID int) ([]model.AppointmentStatusLog, string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	history, err := api.GetAppointmentStatusHistoryRepo(ctx, appointmentID)
+	if err != nil {
+		return nil, values.Error, fmt.Sprintf("%s [AdGtHist]", values.SystemErr), err
+	}
+
+	return history, values.Success, "Appointment history retrieved successfully", nil
+}
+
+func (api *API) GetAppointmentHistoryHelper(appointmentID, userID int) ([]model.AppointmentStatusLog, string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// First verify that the appointment belongs to the user
+	_, err := api.GetAppointmentDetailsRepo(ctx, appointmentID, userID)
+	if err != nil {
+		return nil, values.NotFound, "Appointment not found or access denied", err
+	}
+
+	history, err := api.GetAppointmentStatusHistoryRepo(ctx, appointmentID)
+	if err != nil {
+		return nil, values.Error, fmt.Sprintf("%s [GtHist]", values.SystemErr), err
+	}
+
+	return history, values.Success, "Appointment history retrieved successfully", nil
+}

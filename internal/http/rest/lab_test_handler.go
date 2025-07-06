@@ -1,6 +1,7 @@
 package rest
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -14,6 +15,7 @@ import (
 func (api *API) LabTestRoutes() chi.Router {
 	mux := chi.NewRouter()
 	mux.Method(http.MethodGet, "/", Handler(api.GetAllLabTestsHandler))
+	mux.Method(http.MethodGet, "/available", Handler(api.GetAvailableTestsForSelectionHandler))
 
 	// Admin endpoints
 	mux.Group(func(r chi.Router) {
@@ -41,6 +43,20 @@ func (api *API) GetAllLabTestsHandler(_ http.ResponseWriter, r *http.Request) *S
 	}
 }
 
+func (api *API) GetAvailableTestsForSelectionHandler(_ http.ResponseWriter, r *http.Request) *ServerResponse {
+	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+	tests, status, message, err := api.GetAvailableTestsForSelectionHelper()
+	if err != nil {
+		return respondWithError(err, message, status, &tc)
+	}
+	return &ServerResponse{
+		Message:    message,
+		Status:     status,
+		StatusCode: util.StatusCode(status),
+		Data:       tests,
+	}
+}
+
 // Admin: Create Lab Test
 func (api *API) CreateLabTestHandler(_ http.ResponseWriter, r *http.Request) *ServerResponse {
 	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
@@ -50,6 +66,7 @@ func (api *API) CreateLabTestHandler(_ http.ResponseWriter, r *http.Request) *Se
 	}
 	test, status, message, err := api.CreateLabTestHelper(req)
 	if err != nil {
+		log.Println(err)
 		return respondWithError(err, message, status, &tc)
 	}
 	return &ServerResponse{Message: message, Status: status, StatusCode: util.StatusCode(status), Data: test}

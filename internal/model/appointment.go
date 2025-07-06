@@ -2,17 +2,49 @@ package model
 
 import "time"
 
+// Appointment status constants
+type AppointmentStatus string
+
+const (
+	StatusPending          AppointmentStatus = "pending"
+	StatusConfirmed        AppointmentStatus = "confirmed"
+	StatusScheduled        AppointmentStatus = "scheduled"
+	StatusRescheduleOffered AppointmentStatus = "reschedule_offered"
+	StatusRescheduleAccepted AppointmentStatus = "reschedule_accepted"
+	StatusInProgress       AppointmentStatus = "in_progress"
+	StatusCompleted        AppointmentStatus = "completed"
+	StatusCanceled         AppointmentStatus = "canceled"
+	StatusRejected         AppointmentStatus = "rejected"
+	StatusNoShow           AppointmentStatus = "no_show"
+)
+
+// Appointment type constants
+type AppointmentType string
+
+const (
+	TypeDoctor AppointmentType = "doctor"
+	TypeLab    AppointmentType = "lab_test"
+	TypeIVF    AppointmentType = "ivf"
+)
+
 type Appointment struct {
 	ID                       int                        `json:"id" db:"id"`
 	UserID                   int                        `json:"user_id" db:"user_id"`
-	DoctorID                 *int                       `json:"doctor_id,omitempty" db:"doctor_id"`     // Pointer to handle nullability
-	LabTestID                *int                       `json:"lab_test_id,omitempty" db:"lab_test_id"` // Pointer to handle nullability
-	AppointmentType          string                     `json:"appointment_type" db:"appointment_type"`
+	DoctorID                 *int                       `json:"doctor_id,omitempty" db:"doctor_id"`
+	LabTestID                *int                       `json:"lab_test_id,omitempty" db:"lab_test_id"`
+	ProviderID               *int                       `json:"provider_id,omitempty" db:"provider_id"`
+	AppointmentType          AppointmentType            `json:"appointment_type" db:"appointment_type"`
 	AppointmentDate          string                     `json:"appointment_date" db:"appointment_date"`
 	AppointmentTime          string                     `json:"appointment_time" db:"appointment_time"`
-	Status                   string                     `json:"status" db:"status"`
+	Status                   AppointmentStatus          `json:"status" db:"status"`
+	AdminNotes               *string                    `json:"admin_notes,omitempty" db:"admin_notes"`
+	UserNotes                *string                    `json:"user_notes,omitempty" db:"user_notes"`
+	RejectionReason          *string                    `json:"rejection_reason,omitempty" db:"rejection_reason"`
 	LabTestDetails           *LabTestAppointmentDetails `json:"lab_test_details,omitempty"`
 	DoctorAppointmentDetails *DoctorAppointmentDetails  `json:"doctor_appointment_details,omitempty"`
+	IVFDetails               *IVFAppointmentDetails     `json:"ivf_details,omitempty"`
+	RescheduleOffers         []RescheduleOffer          `json:"reschedule_offers,omitempty"`
+	StatusHistory            []AppointmentStatusLog     `json:"status_history,omitempty"`
 	CreatedAt                string                     `json:"created_at" db:"created_at"`
 	UpdatedAt                string                     `json:"updated_at" db:"updated_at"`
 }
@@ -130,4 +162,131 @@ type AppointmentFilter struct {
 	Date     string `json:"date"`
 	Upcoming bool   `json:"upcoming"`
 	History  bool   `json:"history"`
+}
+
+// New structs for enhanced appointment system
+type RescheduleOffer struct {
+	ID              int                `json:"id" db:"id"`
+	AppointmentID   int                `json:"appointment_id" db:"appointment_id"`
+	ProposedDate    string             `json:"proposed_date" db:"proposed_date"`
+	ProposedTime    string             `json:"proposed_time" db:"proposed_time"`
+	AdminNotes      *string            `json:"admin_notes,omitempty" db:"admin_notes"`
+	Status          string             `json:"status" db:"status"`
+	CreatedAt       *time.Time         `json:"created_at" db:"created_at"`
+	UpdatedAt       *time.Time         `json:"updated_at" db:"updated_at"`
+}
+
+type AppointmentStatusLog struct {
+	ID              int       `json:"id" db:"id"`
+	AppointmentID   int       `json:"appointment_id" db:"appointment_id"`
+	Status          string    `json:"status" db:"status"`
+	Notes           *string   `json:"notes,omitempty" db:"notes"`
+	ChangedByUserID *int      `json:"changed_by_user_id,omitempty" db:"changed_by_user_id"`
+	ChangedAt       *time.Time `json:"changed_at" db:"changed_at"`
+}
+
+type IVFAppointmentDetails struct {
+	ID                  int     `json:"id" db:"id"`
+	AppointmentID       int     `json:"appointment_id" db:"appointment_id"`
+	TreatmentType       *string `json:"treatment_type,omitempty" db:"treatment_type"`
+	CycleDay            *int    `json:"cycle_day,omitempty" db:"cycle_day"`
+	SpecialInstructions *string `json:"special_instructions,omitempty" db:"special_instructions"`
+	PreparationNotes    *string `json:"preparation_notes,omitempty" db:"preparation_notes"`
+}
+
+// Admin request structs
+type AdminAppointmentAction struct {
+	Notes           *string    `json:"notes,omitempty"`
+	RejectionReason *string    `json:"rejection_reason,omitempty"`
+	ProposedDate    *string    `json:"proposed_date,omitempty"`
+	ProposedTime    *string    `json:"proposed_time,omitempty"`
+}
+
+type AdminAppointmentFilter struct {
+	Status          []string `json:"status,omitempty"`
+	AppointmentType []string `json:"appointment_type,omitempty"`
+	DateFrom        *string  `json:"date_from,omitempty"`
+	DateTo          *string  `json:"date_to,omitempty"`
+	ProviderID      *int     `json:"provider_id,omitempty"`
+	Page            int      `json:"page"`
+	Limit           int      `json:"limit"`
+}
+
+// Detailed appointment structures for get by ID
+type DetailedAppointment struct {
+	ID                  int                        `json:"id"`
+	UserID              int                        `json:"user_id"`
+	AppointmentType     string                     `json:"appointment_type"`
+	AppointmentDatetime *time.Time                 `json:"appointment_datetime"`
+	Status              string                     `json:"status"`
+	CreatedAt           *time.Time                 `json:"created_at"`
+	UpdatedAt           *time.Time                 `json:"updated_at"`
+	
+	// User details
+	User                *UserInfo                  `json:"user"`
+	
+	// Appointment specific details
+	DoctorDetails       *DoctorAppointmentDetails  `json:"doctor_details,omitempty"`
+	LabTestDetails      *LabTestAppointmentDetails `json:"lab_test_details,omitempty"`
+	
+	// Related information
+	Hospital            *HospitalInfo              `json:"hospital,omitempty"`
+	TestType            *TestTypeInfo              `json:"test_type,omitempty"`
+	Doctor              *DoctorInfo                `json:"doctor,omitempty"`
+	
+	// Status and actions
+	StatusHistory       []AppointmentStatusLog     `json:"status_history"`
+	RescheduleOffers    []RescheduleOffer          `json:"reschedule_offers"`
+	NextActions         []string                   `json:"next_actions"`
+}
+
+type UserInfo struct {
+	ID          int    `json:"id"`
+	FirstName   string `json:"first_name"`
+	LastName    string `json:"last_name"`
+	Email       string `json:"email"`
+	DateOfBirth string `json:"date_of_birth"`
+	Sex         string `json:"sex"`
+	Phone       string `json:"phone,omitempty"`
+}
+
+type HospitalInfo struct {
+	ID      int    `json:"id"`
+	Name    string `json:"name"`
+	Address string `json:"address"`
+	Phone   string `json:"phone"`
+	Email   string `json:"email"`
+}
+
+type TestTypeInfo struct {
+	ID          int     `json:"id"`
+	Name        string  `json:"name"`
+	Description string  `json:"description"`
+	Price       float64 `json:"price"`
+}
+
+type DoctorInfo struct {
+	ID             int    `json:"id"`
+	Name           string `json:"name"`
+	Specialization string `json:"specialization"`
+	Email          string `json:"email"`
+	Phone          string `json:"phone"`
+}
+
+// User response structs  
+type UserAppointmentResponse struct {
+	Appointment   AppointmentDetails      `json:"appointment"`
+	StatusHistory []AppointmentStatusLog  `json:"status_history"`
+	NextActions   []string                `json:"next_actions"`
+	EstimatedTime *time.Time              `json:"estimated_time,omitempty"`
+}
+
+// Enhanced detailed response for get by ID
+type DetailedAppointmentResponse struct {
+	Appointment DetailedAppointment `json:"appointment"`
+}
+
+type RescheduleResponse struct {
+	OfferID int     `json:"offer_id"`
+	Reason  *string `json:"reason,omitempty"`
 }
