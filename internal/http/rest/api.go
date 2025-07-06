@@ -57,7 +57,8 @@ func (api *API) setUpServerHandler() http.Handler {
 
 	corsMiddleware := cors.New(cors.Options{
 		AllowedOrigins: []string{
-			"*",
+			"https://yourcare-dashboard.vercel.app", // Your production frontend
+			"http://localhost:5173",                 // Your local development frontend
 		},
 		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
 		AllowedHeaders: []string{
