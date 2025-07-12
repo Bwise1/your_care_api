@@ -87,6 +87,15 @@ func (api *API) setUpServerHandler() http.Handler {
 		AllowCredentials: false,
 		MaxAge:           300,
 	}))
+
+	// Add this debug middleware to see if requests are reaching your app
+	mux.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Printf("Request: %s %s from %s\n", r.Method, r.URL.Path, r.Header.Get("Origin"))
+			next.ServeHTTP(w, r)
+		})
+	})
+
 	mux.Use(RequestTracing)
 	mux.Get("/",
 		func(w http.ResponseWriter, r *http.Request) {
