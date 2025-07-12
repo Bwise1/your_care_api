@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/cors"
 
 	"github.com/bwise1/your_care_api/config"
 	deps "github.com/bwise1/your_care_api/internal/debs"
@@ -54,30 +53,30 @@ func (api *API) Serve() error {
 func (api *API) setUpServerHandler() http.Handler {
 	mux := chi.NewRouter()
 
-	corsMiddleware := cors.New(cors.Options{
-		AllowedOrigins: []string{
-			"https://yourcare-dashboard.vercel.app",
-			"http://localhost:5173",
-		},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowedHeaders: []string{
-			"Accept",
-			"Authorization",
-			"Content-Type",
-			"X-CSRF-Token",
-			"X-Requested-With",
-			"Origin",
-			"X-Request-Source",
-			"X-Real-IP",
-			"X-Forwarded-For",
-			"X-Forwarded-Proto",
-		},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: false,
-		MaxAge:           300,
-	})
+	// corsMiddleware := cors.New(cors.Options{
+	// 	AllowedOrigins: []string{
+	// 		"https://yourcare-dashboard.vercel.app",
+	// 		"http://localhost:5173",
+	// 	},
+	// 	AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+	// 	AllowedHeaders: []string{
+	// 		"Accept",
+	// 		"Authorization",
+	// 		"Content-Type",
+	// 		"X-CSRF-Token",
+	// 		"X-Requested-With",
+	// 		"Origin",
+	// 		"X-Request-Source",
+	// 		"X-Real-IP",
+	// 		"X-Forwarded-For",
+	// 		"X-Forwarded-Proto",
+	// 	},
+	// 	ExposedHeaders:   []string{"Link"},
+	// 	AllowCredentials: false,
+	// 	MaxAge:           300,
+	// })
 
-	mux.Use(corsMiddleware.Handler)
+	// mux.Use(corsMiddleware.Handler)
 
 	mux.Use(RequestTracing)
 	mux.Get("/",
