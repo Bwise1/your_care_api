@@ -80,9 +80,15 @@ func (api *API) setUpServerHandler() http.Handler {
 	// mux.Use(corsMiddleware.Handler)
 
 	mux.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"*"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowedHeaders:   []string{"*"},
+		AllowedOrigins: []string{"http://localhost:5173", "https://yourcare-dashboard.vercel.app"},
+		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowedHeaders: []string{
+			"Accept",
+			"Authorization",
+			"Content-Type",
+			"X-CSRF-Token",
+			"X-Requested-With",
+		},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: false,
 		MaxAge:           300,
