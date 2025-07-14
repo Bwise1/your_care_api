@@ -24,7 +24,6 @@ func (api *API) HospitalRoutes() chi.Router {
 		r.Method(http.MethodDelete, "/{hospitalID}", Handler(api.DeleteHospital))
 
 		//under review
-		r.Method(http.MethodPost, "/{hospitalID}/lab-tests", Handler(api.CreateHospitalLabTest))
 		r.Method(http.MethodPut, "/lab-tests/{labTestID}", Handler(api.UpdateHospitalLabTest))
 		r.Method(http.MethodDelete, "/lab-tests/{labTestID}", Handler(api.DeleteHospitalLabTest))
 	})

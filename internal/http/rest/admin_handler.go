@@ -42,6 +42,7 @@ func (api *API) AdminRoutes() chi.Router {
 		r.Method(http.MethodPost, "/", Handler(api.CreateHospital))
 		r.Method(http.MethodDelete, "/{hospitalID}", Handler(api.DeleteHospital))
 		r.Method(http.MethodGet, "/{hospitalID}/lab-tests", Handler(api.GetHospitalLabTests))
+		r.Method(http.MethodPost, "/{hospitalID}/lab-tests", Handler(api.CreateHospitalLabTest))
 	})
 
 	return mux
