@@ -83,7 +83,7 @@ func (api *API) setUpServerHandler() http.Handler {
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:5173", "https://yourcare-dashboard.vercel.app"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Requested-With", "X-Request-Source"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Requested-With"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: true,
 		MaxAge:           300,
@@ -113,7 +113,7 @@ func (api *API) setUpServerHandler() http.Handler {
 			next.ServeHTTP(w, r)
 		})
 	})
-	mux.Use(RequestTracing)
+	// mux.Use(RequestTracing)
 	mux.Get("/",
 		func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Hello, World!"))
