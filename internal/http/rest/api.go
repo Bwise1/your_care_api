@@ -53,6 +53,9 @@ func (api *API) Serve() error {
 func (api *API) setUpServerHandler() http.Handler {
 	mux := chi.NewRouter()
 
+	// Add the RequestTracing middleware to all routes
+	mux.Use(RequestTracing)
+
 	mux.Get("/",
 		func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Hello, World!"))
