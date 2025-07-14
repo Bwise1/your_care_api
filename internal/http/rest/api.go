@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -80,28 +81,38 @@ func (api *API) setUpServerHandler() http.Handler {
 	// mux.Use(corsMiddleware.Handler)
 
 	mux.Use(cors.Handler(cors.Options{
-		AllowedOrigins: []string{"http://localhost:5173", "https://yourcare-dashboard.vercel.app"},
-		AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowedHeaders: []string{
-			"Accept",
-			"Authorization",
-			"Content-Type",
-			"X-CSRF-Token",
-			"X-Requested-With",
-		},
+		AllowedOrigins:   []string{"http://localhost:5173", "https://yourcare-dashboard.vercel.app"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Requested-With", "X-Request-Source"},
 		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: false,
+		AllowCredentials: true,
 		MaxAge:           300,
+		Debug:            true, // Enable debugging
 	}))
 
 	// Add this debug middleware to see if requests are reaching your app
+	// mux.Use(func(next http.Handler) http.Handler {
+	// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	// 		fmt.Printf("Request: %s %s from %s\n", r.Method, r.URL.Path, r.Header.Get("Origin"))
+	// 		next.ServeHTTP(w, r)
+	// 	})
+	// })
+
 	mux.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Printf("Request: %s %s from %s\n", r.Method, r.URL.Path, r.Header.Get("Origin"))
+			if r.Method == "OPTIONS" {
+				w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+				w.Header().Set("Access-Control-Allow-Methods", strings.Join([]string{
+					"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"}, ", "))
+				w.Header().Set("Access-Control-Allow-Headers", strings.Join([]string{
+					"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Requested-With"}, ", "))
+				w.Header().Set("Access-Control-Max-Age", "300")
+				w.WriteHeader(http.StatusOK)
+				return
+			}
 			next.ServeHTTP(w, r)
 		})
 	})
-
 	mux.Use(RequestTracing)
 	mux.Get("/",
 		func(w http.ResponseWriter, r *http.Request) {
