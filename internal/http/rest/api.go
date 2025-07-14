@@ -5,11 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/cors"
 
 	"github.com/bwise1/your_care_api/config"
 	deps "github.com/bwise1/your_care_api/internal/debs"
@@ -55,65 +53,6 @@ func (api *API) Serve() error {
 func (api *API) setUpServerHandler() http.Handler {
 	mux := chi.NewRouter()
 
-	// corsMiddleware := cors.New(cors.Options{
-	// 	AllowedOrigins: []string{
-	// 		"https://yourcare-dashboard.vercel.app",
-	// 		"http://localhost:5173",
-	// 	},
-	// 	AllowedMethods: []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-	// 	AllowedHeaders: []string{
-	// 		"Accept",
-	// 		"Authorization",
-	// 		"Content-Type",
-	// 		"X-CSRF-Token",
-	// 		"X-Requested-With",
-	// 		"Origin",
-	// 		"X-Request-Source",
-	// 		"X-Real-IP",
-	// 		"X-Forwarded-For",
-	// 		"X-Forwarded-Proto",
-	// 	},
-	// 	ExposedHeaders:   []string{"Link"},
-	// 	AllowCredentials: false,
-	// 	MaxAge:           300,
-	// })
-
-	// mux.Use(corsMiddleware.Handler)
-
-	mux.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:5173", "https://yourcare-dashboard.vercel.app"},
-		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Requested-With"},
-		ExposedHeaders:   []string{"Link"},
-		AllowCredentials: true,
-		MaxAge:           300,
-		Debug:            true, // Enable debugging
-	}))
-
-	// Add this debug middleware to see if requests are reaching your app
-	// mux.Use(func(next http.Handler) http.Handler {
-	// 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	// 		fmt.Printf("Request: %s %s from %s\n", r.Method, r.URL.Path, r.Header.Get("Origin"))
-	// 		next.ServeHTTP(w, r)
-	// 	})
-	// })
-
-	mux.Use(func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if r.Method == "OPTIONS" {
-				w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
-				w.Header().Set("Access-Control-Allow-Methods", strings.Join([]string{
-					"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"}, ", "))
-				w.Header().Set("Access-Control-Allow-Headers", strings.Join([]string{
-					"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Requested-With"}, ", "))
-				w.Header().Set("Access-Control-Max-Age", "300")
-				w.WriteHeader(http.StatusOK)
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
-	})
-	// mux.Use(RequestTracing)
 	mux.Get("/",
 		func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("Hello, World!"))
