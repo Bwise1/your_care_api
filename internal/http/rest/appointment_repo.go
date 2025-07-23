@@ -23,17 +23,18 @@ func (api *API) CreateLabTestAppointment(ctx context.Context, appointment model.
 				user_id,
 				lab_test_id,
 				appointment_type,
-				appointment_date,
-				appointment_time,
+				appointment_datetime,
 				status
-			) VALUES (?, ?, ?, ?, ?, ?)`
+			) VALUES (?, ?, ?, ?, ?)`
 
+		// Combine date and time for TIMESTAMP field
+		appointmentDateTime := appointment.AppointmentDate + " " + appointment.AppointmentTime
+		
 		result, err := tx.ExecContext(ctx, appointmentStmt,
 			appointment.UserID,
 			appointment.LabTestID,
 			"lab_test",
-			appointment.AppointmentDate,
-			appointment.AppointmentTime,
+			appointmentDateTime,
 			"pending",
 		)
 		if err != nil {
@@ -269,8 +270,7 @@ func (api *API) FetchFilteredAppointmentsRepo(ctx context.Context, filter model.
             a.id,
             a.user_id,
             a.appointment_type,
-            a.appointment_date,
-            a.appointment_time,
+            a.appointment_datetime,
             a.status,
             a.created_at,
             a.updated_at,
@@ -373,14 +373,13 @@ func (api *API) CreateDoctorAppointment(ctx context.Context, appointment model.A
 	err := api.Deps.DB.RunInTx(ctx, func(tx *sqlx.Tx) error {
 		// Insert into the appointment table
 		appointmentStmt := `
-			INSERT INTO appointment (
+			INSERT INTO appointments (
 				user_id,
 				doctor_id,
 				appointment_type,
-				appointment_date,
-				appointment_time,
+				appointment_datetime,
 				status
-			) VALUES (?, ?, ?, ?, ?, ?)`
+			) VALUES (?, ?, ?, ?, ?)`
 
 		result, err := tx.ExecContext(ctx, appointmentStmt,
 			appointment.UserID,
@@ -1073,11 +1072,14 @@ func (api *API) AcceptRescheduleOfferRepo(ctx context.Context, appointmentID, us
 		}
 
 		// Update appointment with new date/time
+		// Combine the proposed date and time for TIMESTAMP field
+		proposedDateTime := offer.ProposedDate + " " + offer.ProposedTime + ":00"
+		
 		updateAppointmentQuery := `
 			UPDATE appointments
-			SET appointment_date = ?, appointment_time = ?, status = ?, updated_at = NOW()
+			SET appointment_datetime = ?, status = ?, updated_at = NOW()
 			WHERE id = ?`
-		_, err = tx.ExecContext(ctx, updateAppointmentQuery, offer.ProposedDate, offer.ProposedTime, string(model.StatusRescheduleAccepted), appointmentID)
+		_, err = tx.ExecContext(ctx, updateAppointmentQuery, proposedDateTime, string(model.StatusRescheduleAccepted), appointmentID)
 		if err != nil {
 			return err
 		}
