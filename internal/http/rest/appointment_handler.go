@@ -609,3 +609,31 @@ func (api *API) getNextActionsForAdmin(status model.AppointmentStatus) []string 
 		return []string{}
 	}
 }
+
+func (api *API) AdminUpdateAppointmentStatus(_ http.ResponseWriter, r *http.Request) *ServerResponse {
+	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
+
+	appointmentID, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		return respondWithError(err, "Invalid appointment ID", values.BadRequestBody, &tc)
+	}
+
+	var req model.AdminStatusUpdateRequest
+	if decodeErr := util.DecodeJSONBody(&tc, r.Body, &req); decodeErr != nil {
+		return respondWithError(decodeErr, "unable to parse request", values.BadRequestBody, &tc)
+	}
+
+	adminID := r.Context().Value("user_id").(int)
+
+	status, message, err := api.AdminUpdateAppointmentStatusHelper(appointmentID, adminID, req)
+	if err != nil {
+		return respondWithError(err, message, status, &tc)
+	}
+
+	return &ServerResponse{
+		Message:    message,
+		Status:     status,
+		StatusCode: util.StatusCode(status),
+		Data:       nil,
+	}
+}

@@ -269,7 +269,8 @@ func (api *API) FetchFilteredAppointmentsRepo(ctx context.Context, filter model.
             a.id,
             a.user_id,
             a.appointment_type,
-            a.appointment_datetime,
+            a.appointment_date,
+            a.appointment_time,
             a.status,
             a.created_at,
             a.updated_at,
@@ -441,8 +442,7 @@ func (api *API) GetLabTestAppointments(ctx context.Context, userID int) ([]model
 	query := `
 		SELECT
 			a.id,
-			a.appointment_date,
-			a.appointment_time,
+			a.appointment_datetime,
 			a.status,
 			lta.pickup_type,
 			lta.home_location,
@@ -624,6 +624,7 @@ func (api *API) AdminGetAppointmentDetailsRepo(ctx context.Context, appointmentI
 		return model.AppointmentDetails{}, fmt.Errorf("failed to fetch appointment details: %w", err)
 	}
 
+	
 	appointment := model.AppointmentDetails{
 		ID:                  row.ID,
 		UserID:              row.UserID,
@@ -697,6 +698,7 @@ func (api *API) GetAppointmentDetailsRepo(ctx context.Context, appointmentID, us
 		return model.AppointmentDetails{}, fmt.Errorf("failed to fetch appointment details: %w", err)
 	}
 
+	
 	appointment := model.AppointmentDetails{
 		ID:                  row.ID,
 		UserID:              row.UserID,

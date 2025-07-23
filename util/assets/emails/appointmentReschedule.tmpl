@@ -1,0 +1,69 @@
+{{define "subject"}}Reschedule Offer - {{.AppointmentType | title}} Appointment{{end}}
+
+{{define "plainBody"}}
+Hello {{.PatientName}},
+
+We need to reschedule your {{.AppointmentType}} appointment that was scheduled for {{.OriginalDate}} at {{.OriginalTime}}.
+
+Proposed New Schedule:
+- Date: {{.ProposedDate}}
+- Time: {{.ProposedTime}}
+
+{{if .AdminNotes}}
+Additional Information: {{.AdminNotes}}
+{{end}}
+
+Please log into your account to accept or decline this reschedule offer.
+
+We apologize for any inconvenience and appreciate your flexibility.
+
+YourCare Team
+{{end}}
+
+{{define "htmlBody"}}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <style>
+      .appointment-card { background: #fff8e1; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #f39c12; }
+      .detail-row { margin: 10px 0; }
+      .label { font-weight: bold; color: #2c3e50; }
+      .value { color: #34495e; }
+      .reschedule { color: #f39c12; font-weight: bold; }
+      .original { text-decoration: line-through; color: #7f8c8d; }
+      .proposed { color: #27ae60; font-weight: bold; }
+    </style>
+  </head>
+  <body>
+    <p>Hello <strong>{{.PatientName}}</strong>,</p>
+    <p class="reschedule">We need to reschedule your {{.AppointmentType}} appointment.</p>
+    
+    <div class="appointment-card">
+      <div class="detail-row">
+        <span class="label">Original Schedule:</span> 
+        <span class="value original">{{.OriginalDate}} at {{.OriginalTime}}</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Proposed New Schedule:</span>
+      </div>
+      <div class="detail-row" style="margin-left: 20px;">
+        <span class="label">Date:</span> <span class="value proposed">{{.ProposedDate}}</span>
+      </div>
+      <div class="detail-row" style="margin-left: 20px;">
+        <span class="label">Time:</span> <span class="value proposed">{{.ProposedTime}}</span>
+      </div>
+      {{if .AdminNotes}}
+      <div class="detail-row">
+        <span class="label">Additional Information:</span> <span class="value">{{.AdminNotes}}</span>
+      </div>
+      {{end}}
+    </div>
+    
+    <p>Please <strong>log into your account</strong> to accept or decline this reschedule offer.</p>
+    <p>We apologize for any inconvenience and appreciate your flexibility.</p>
+    <p><strong>YourCare Team</strong></p>
+  </body>
+</html>
+{{end}}

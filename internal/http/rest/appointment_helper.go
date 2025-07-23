@@ -152,6 +152,8 @@ func (api *API) AdminConfirmAppointmentHelper(appointmentID, adminID int, req mo
 		return values.Error, fmt.Sprintf("%s [AdCfAp]", values.SystemErr), err
 	}
 
+	go api.SendAppointmentConfirmationEmail(appointmentID)
+
 	return values.Success, "Appointment confirmed successfully", nil
 }
 
@@ -163,6 +165,8 @@ func (api *API) AdminRejectAppointmentHelper(appointmentID, adminID int, req mod
 	if err != nil {
 		return values.Error, fmt.Sprintf("%s [AdRjAp]", values.SystemErr), err
 	}
+
+	go api.SendAppointmentRejectionEmail(appointmentID, req.RejectionReason, req.Notes)
 
 	return values.Success, "Appointment rejected", nil
 }
@@ -179,6 +183,8 @@ func (api *API) AdminRescheduleAppointmentHelper(appointmentID, adminID int, req
 	if err != nil {
 		return values.Error, fmt.Sprintf("%s [AdRsAp]", values.SystemErr), err
 	}
+
+	go api.SendRescheduleOfferEmail(appointmentID, *req.ProposedDate, *req.ProposedTime, req.Notes)
 
 	return values.Success, "Reschedule offer created", nil
 }
@@ -302,4 +308,182 @@ func (api *API) GetAppointmentHistoryHelper(appointmentID, userID int) ([]model.
 	}
 
 	return history, values.Success, "Appointment history retrieved successfully", nil
+}
+
+// Email notification functions
+
+func (api *API) SendAppointmentConfirmationEmail(appointmentID int) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	appointment, err := api.GetAppointmentEmailData(ctx, appointmentID)
+	if err != nil {
+		log.Printf("Error getting appointment data for email: %v", err)
+		return
+	}
+
+	emailData := map[string]interface{}{
+		"PatientName":     appointment.PatientName,
+		"AppointmentType": appointment.AppointmentType,
+		"AppointmentDate": appointment.AppointmentDate,
+		"AppointmentTime": appointment.AppointmentTime,
+		"TestName":        appointment.TestName,
+		"HospitalName":    appointment.HospitalName,
+		"PickupType":      appointment.PickupType,
+		"HomeLocation":    appointment.HomeLocation,
+		"AdminNotes":      appointment.AdminNotes,
+	}
+
+	if err := api.Deps.Mailer.Send(appointment.PatientEmail, emailData, "appointmentConfirmed.tmpl"); err != nil {
+		log.Printf("Error sending confirmation email: %v", err)
+	}
+}
+
+func (api *API) SendAppointmentRejectionEmail(appointmentID int, rejectionReason, adminNotes *string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	appointment, err := api.GetAppointmentEmailData(ctx, appointmentID)
+	if err != nil {
+		log.Printf("Error getting appointment data for email: %v", err)
+		return
+	}
+
+	emailData := map[string]interface{}{
+		"PatientName":     appointment.PatientName,
+		"AppointmentType": appointment.AppointmentType,
+		"AppointmentDate": appointment.AppointmentDate,
+		"AppointmentTime": appointment.AppointmentTime,
+		"RejectionReason": rejectionReason,
+		"AdminNotes":      adminNotes,
+	}
+
+	if rejectionReason != nil {
+		emailData["RejectionReason"] = *rejectionReason
+	}
+	if adminNotes != nil {
+		emailData["AdminNotes"] = *adminNotes
+	}
+
+	if err := api.Deps.Mailer.Send(appointment.PatientEmail, emailData, "appointmentRejected.tmpl"); err != nil {
+		log.Printf("Error sending rejection email: %v", err)
+	}
+}
+
+func (api *API) SendRescheduleOfferEmail(appointmentID int, proposedDate, proposedTime string, adminNotes *string) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	appointment, err := api.GetAppointmentEmailData(ctx, appointmentID)
+	if err != nil {
+		log.Printf("Error getting appointment data for email: %v", err)
+		return
+	}
+
+	emailData := map[string]interface{}{
+		"PatientName":     appointment.PatientName,
+		"AppointmentType": appointment.AppointmentType,
+		"OriginalDate":    appointment.AppointmentDate,
+		"OriginalTime":    appointment.AppointmentTime,
+		"ProposedDate":    proposedDate,
+		"ProposedTime":    proposedTime,
+		"AdminNotes":      adminNotes,
+	}
+
+	if adminNotes != nil {
+		emailData["AdminNotes"] = *adminNotes
+	}
+
+	if err := api.Deps.Mailer.Send(appointment.PatientEmail, emailData, "appointmentReschedule.tmpl"); err != nil {
+		log.Printf("Error sending reschedule email: %v", err)
+	}
+}
+
+type AppointmentEmailData struct {
+	PatientName     string
+	PatientEmail    string
+	AppointmentType string
+	AppointmentDate string
+	AppointmentTime string
+	TestName        *string
+	HospitalName    *string
+	PickupType      *string
+	HomeLocation    *string
+	AdminNotes      *string
+}
+
+func (api *API) GetAppointmentEmailData(ctx context.Context, appointmentID int) (*AppointmentEmailData, error) {
+	query := `
+		SELECT 
+			CONCAT(u.first_name, ' ', u.last_name) as patient_name,
+			u.email as patient_email,
+			a.appointment_type,
+			DATE_FORMAT(a.appointment_datetime, '%Y-%m-%d') as appointment_date,
+			DATE_FORMAT(a.appointment_datetime, '%H:%i') as appointment_time,
+			lt.name as test_name,
+			h.name as hospital_name,
+			ltad.pickup_type,
+			ltad.home_location,
+			a.admin_notes
+		FROM appointments a
+		JOIN users u ON a.user_id = u.id
+		LEFT JOIN lab_test_appointment_details ltad ON a.id = ltad.appointment_id
+		LEFT JOIN lab_tests lt ON ltad.test_type_id = lt.id
+		LEFT JOIN hospitals h ON ltad.hospital_id = h.id
+		WHERE a.id = ?`
+
+	var data AppointmentEmailData
+	err := api.Deps.DB.GetContext(ctx, &data, query, appointmentID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &data, nil
+}
+
+func (api *API) AdminUpdateAppointmentStatusHelper(appointmentID, adminID int, req model.AdminStatusUpdateRequest) (string, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	switch req.Status {
+	case "approved":
+		err := api.UpdateAppointmentStatus(ctx, appointmentID, string(model.StatusConfirmed), req.AdminNotes, &adminID)
+		if err != nil {
+			return values.Error, fmt.Sprintf("%s [AdUpAp]", values.SystemErr), err
+		}
+		go api.SendAppointmentConfirmationEmail(appointmentID)
+		return values.Success, "Appointment approved successfully", nil
+
+	case "rejected":
+		err := api.RejectAppointment(ctx, appointmentID, req.RejectionReason, req.AdminNotes, &adminID)
+		if err != nil {
+			return values.Error, fmt.Sprintf("%s [AdRjAp]", values.SystemErr), err
+		}
+		go api.SendAppointmentRejectionEmail(appointmentID, req.RejectionReason, req.AdminNotes)
+		return values.Success, "Appointment rejected", nil
+
+	case "rescheduled":
+		if req.NewDateTime == nil {
+			return values.BadRequestBody, "New date and time are required for reschedule", fmt.Errorf("missing new date/time")
+		}
+		
+		// Parse the new datetime and extract date and time
+		newDateTime, err := time.Parse("2006-01-02T15:04", *req.NewDateTime)
+		if err != nil {
+			return values.BadRequestBody, "Invalid date/time format", err
+		}
+		
+		newDate := newDateTime.Format("2006-01-02")
+		newTime := newDateTime.Format("15:04")
+		
+		err = api.CreateRescheduleOffer(ctx, appointmentID, newDate, newTime, req.AdminNotes, &adminID)
+		if err != nil {
+			return values.Error, fmt.Sprintf("%s [AdRsAp]", values.SystemErr), err
+		}
+		go api.SendRescheduleOfferEmail(appointmentID, newDate, newTime, req.AdminNotes)
+		return values.Success, "Reschedule offer sent successfully", nil
+		
+	default:
+		return values.BadRequestBody, "Invalid status", fmt.Errorf("unsupported status: %s", req.Status)
+	}
 }

@@ -1,0 +1,59 @@
+{{define "subject"}}Appointment Update - {{.AppointmentType | title}} on {{.AppointmentDate}}{{end}}
+
+{{define "plainBody"}}
+Hello {{.PatientName}},
+
+We regret to inform you that your {{.AppointmentType}} appointment scheduled for {{.AppointmentDate}} at {{.AppointmentTime}} could not be confirmed.
+
+{{if .RejectionReason}}
+Reason: {{.RejectionReason}}
+{{end}}
+
+{{if .AdminNotes}}
+Additional Information: {{.AdminNotes}}
+{{end}}
+
+Please contact us to schedule a new appointment at your convenience. We apologize for any inconvenience caused.
+
+Thank you for your understanding.
+
+YourCare Team
+{{end}}
+
+{{define "htmlBody"}}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <style>
+      .appointment-card { background: #fff5f5; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #e74c3c; }
+      .detail-row { margin: 10px 0; }
+      .label { font-weight: bold; color: #2c3e50; }
+      .value { color: #34495e; }
+      .rejected { color: #e74c3c; font-weight: bold; }
+    </style>
+  </head>
+  <body>
+    <p>Hello <strong>{{.PatientName}}</strong>,</p>
+    <p class="rejected">We regret to inform you that your {{.AppointmentType}} appointment scheduled for {{.AppointmentDate}} at {{.AppointmentTime}} could not be confirmed.</p>
+    
+    <div class="appointment-card">
+      {{if .RejectionReason}}
+      <div class="detail-row">
+        <span class="label">Reason:</span> <span class="value">{{.RejectionReason}}</span>
+      </div>
+      {{end}}
+      {{if .AdminNotes}}
+      <div class="detail-row">
+        <span class="label">Additional Information:</span> <span class="value">{{.AdminNotes}}</span>
+      </div>
+      {{end}}
+    </div>
+    
+    <p>Please <strong>contact us</strong> to schedule a new appointment at your convenience. We apologize for any inconvenience caused.</p>
+    <p>Thank you for your understanding.</p>
+    <p><strong>YourCare Team</strong></p>
+  </body>
+</html>
+{{end}}

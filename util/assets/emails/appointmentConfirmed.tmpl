@@ -1,0 +1,82 @@
+{{define "subject"}}Appointment Confirmed - {{.AppointmentType | title}} on {{.AppointmentDate}}{{end}}
+
+{{define "plainBody"}}
+Hello {{.PatientName}},
+
+Great news! Your {{.AppointmentType}} appointment has been confirmed.
+
+Appointment Details:
+- Date: {{.AppointmentDate}}
+- Time: {{.AppointmentTime}}
+{{if .TestName}}- Test: {{.TestName}}{{end}}
+{{if .HospitalName}}- Hospital: {{.HospitalName}}{{end}}
+{{if .PickupType}}- Pickup Type: {{.PickupType}}{{end}}
+{{if .HomeLocation}}- Location: {{.HomeLocation}}{{end}}
+{{if .AdminNotes}}- Notes: {{.AdminNotes}}{{end}}
+
+Please arrive 15 minutes early for your appointment.
+
+If you need to reschedule or cancel, please contact us as soon as possible.
+
+Thank you for choosing YourCare!
+{{end}}
+
+{{define "htmlBody"}}
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <style>
+      .appointment-card { background: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0; }
+      .detail-row { margin: 10px 0; }
+      .label { font-weight: bold; color: #2c3e50; }
+      .value { color: #34495e; }
+      .success { color: #27ae60; font-weight: bold; }
+    </style>
+  </head>
+  <body>
+    <p>Hello <strong>{{.PatientName}}</strong>,</p>
+    <p class="success">Great news! Your {{.AppointmentType}} appointment has been confirmed.</p>
+    
+    <div class="appointment-card">
+      <h3>Appointment Details</h3>
+      <div class="detail-row">
+        <span class="label">Date:</span> <span class="value">{{.AppointmentDate}}</span>
+      </div>
+      <div class="detail-row">
+        <span class="label">Time:</span> <span class="value">{{.AppointmentTime}}</span>
+      </div>
+      {{if .TestName}}
+      <div class="detail-row">
+        <span class="label">Test:</span> <span class="value">{{.TestName}}</span>
+      </div>
+      {{end}}
+      {{if .HospitalName}}
+      <div class="detail-row">
+        <span class="label">Hospital:</span> <span class="value">{{.HospitalName}}</span>
+      </div>
+      {{end}}
+      {{if .PickupType}}
+      <div class="detail-row">
+        <span class="label">Pickup Type:</span> <span class="value">{{.PickupType}}</span>
+      </div>
+      {{end}}
+      {{if .HomeLocation}}
+      <div class="detail-row">
+        <span class="label">Location:</span> <span class="value">{{.HomeLocation}}</span>
+      </div>
+      {{end}}
+      {{if .AdminNotes}}
+      <div class="detail-row">
+        <span class="label">Notes:</span> <span class="value">{{.AdminNotes}}</span>
+      </div>
+      {{end}}
+    </div>
+    
+    <p>Please arrive <strong>15 minutes early</strong> for your appointment.</p>
+    <p>If you need to reschedule or cancel, please contact us as soon as possible.</p>
+    <p>Thank you for choosing YourCare!</p>
+  </body>
+</html>
+{{end}}

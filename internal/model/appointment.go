@@ -202,6 +202,14 @@ type AdminAppointmentAction struct {
 	ProposedTime    *string    `json:"proposed_time,omitempty"`
 }
 
+type AdminStatusUpdateRequest struct {
+	AppointmentID   int     `json:"appointmentId"`
+	Status          string  `json:"status"`
+	AdminNotes      *string `json:"adminNotes,omitempty"`
+	RejectionReason *string `json:"rejectionReason,omitempty"`
+	NewDateTime     *string `json:"newDateTime,omitempty"`
+}
+
 type AdminAppointmentFilter struct {
 	Status          []string `json:"status,omitempty"`
 	AppointmentType []string `json:"appointment_type,omitempty"`

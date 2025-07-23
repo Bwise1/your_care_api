@@ -21,6 +21,7 @@ func (api *API) AdminRoutes() chi.Router {
 		r.Method(http.MethodPost, "/{id}/reschedule", Handler(api.AdminRescheduleAppointment))
 		r.Method(http.MethodPost, "/{id}/cancel", Handler(api.AdminCancelAppointment))
 		r.Method(http.MethodPut, "/{id}/notes", Handler(api.AdminUpdateNotes))
+		r.Method(http.MethodPut, "/{id}/status", Handler(api.AdminUpdateAppointmentStatus))
 	})
 
 	// Admin lab test routes
