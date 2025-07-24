@@ -786,12 +786,13 @@ func (api *API) GetDetailedAppointmentRepo(ctx context.Context, appointmentID in
 		-- Join lab test appointment details
 		LEFT JOIN lab_test_appointments la ON a.id = la.appointment_id AND a.appointment_type = 'lab_test'
 		LEFT JOIN lab_tests lt ON la.test_type_id = lt.id
-		LEFT JOIN hospitals h ON la.hospital_id = h.id
 
 		-- Join doctor appointment details
 		LEFT JOIN doctor_appointments da ON a.id = da.appointment_id AND a.appointment_type = 'doctor'
 		LEFT JOIN doctors d ON da.doctor_id = d.id
-		LEFT JOIN hospitals h2 ON d.hospital_id = h2.id
+
+		-- Join hospital details (for both lab and doctor appointments)
+		LEFT JOIN hospitals h ON (la.hospital_id = h.id OR d.hospital_id = h.id)
 
 		WHERE a.id = ?`
 
@@ -835,9 +836,8 @@ func (api *API) GetDetailedAppointmentRepo(ctx context.Context, appointmentID in
 		AdditionalInstructions sql.NullString `db:"additional_instructions"`
 
 		// Test type fields
-		TestName        sql.NullString  `db:"test_name"`
-		TestDescription sql.NullString  `db:"test_description"`
-		TestPrice       sql.NullFloat64 `db:"test_price"`
+		TestName        sql.NullString `db:"test_name"`
+		TestDescription sql.NullString `db:"test_description"`
 
 		// Doctor appointment fields
 		DoctorAppointmentID sql.NullInt64  `db:"doctor_appointment_id"`
@@ -916,7 +916,7 @@ func (api *API) GetDetailedAppointmentRepo(ctx context.Context, appointmentID in
 				ID:          int(result.TestTypeID.Int64),
 				Name:        result.TestName.String,
 				Description: result.TestDescription.String,
-				Price:       result.TestPrice.Float64,
+				Price:       0.0, // Price not available in current schema
 			}
 		}
 	}

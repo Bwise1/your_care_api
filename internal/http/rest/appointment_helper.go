@@ -215,26 +215,18 @@ func (api *API) AdminUpdateNotesHelper(appointmentID int, notes string) (string,
 
 // User Helper Functions
 
-func (api *API) GetAppointmentDetailsHelper(appointmentID, userID int) (model.UserAppointmentResponse, string, string, error) {
+func (api *API) GetAppointmentDetailsHelper(appointmentID, userID int) (model.DetailedAppointment, string, string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	// Use the same simple query as the working list function
+	// Get detailed appointment with all populated fields
 	appointment, err := api.GetDetailedAppointmentRepo(ctx, appointmentID, &userID)
 	if err != nil {
-		return model.UserAppointmentResponse{}, values.Error, fmt.Sprintf("%s [GtApDt]", values.SystemErr), err
+		log.Println(err)
+		return model.DetailedAppointment{}, values.Error, fmt.Sprintf("%s [GtApDt]", values.SystemErr), err
 	}
 
-	statusHistory, _ := api.GetAppointmentStatusHistory(appointmentID)
-	nextActions := api.getNextActionsForUser(model.AppointmentStatus(appointment.Status))
-
-	response := model.UserAppointmentResponse{
-		//Appointment:   appointment,
-		StatusHistory: statusHistory,
-		NextActions:   nextActions,
-	}
-
-	return response, values.Success, "Appointment details retrieved successfully", nil
+	return appointment, values.Success, "Appointment details retrieved successfully", nil
 }
 
 func (api *API) AcceptRescheduleOfferHelper(appointmentID, userID, offerID int) (string, string, error) {
@@ -414,7 +406,7 @@ type AppointmentEmailData struct {
 
 func (api *API) GetAppointmentEmailData(ctx context.Context, appointmentID int) (*AppointmentEmailData, error) {
 	query := `
-		SELECT 
+		SELECT
 			CONCAT(u.first_name, ' ', u.last_name) as patient_name,
 			u.email as patient_email,
 			a.appointment_type,
@@ -466,23 +458,23 @@ func (api *API) AdminUpdateAppointmentStatusHelper(appointmentID, adminID int, r
 		if req.NewDateTime == nil {
 			return values.BadRequestBody, "New date and time are required for reschedule", fmt.Errorf("missing new date/time")
 		}
-		
+
 		// Parse the new datetime and extract date and time
 		newDateTime, err := time.Parse("2006-01-02T15:04", *req.NewDateTime)
 		if err != nil {
 			return values.BadRequestBody, "Invalid date/time format", err
 		}
-		
+
 		newDate := newDateTime.Format("2006-01-02")
 		newTime := newDateTime.Format("15:04")
-		
+
 		err = api.CreateRescheduleOffer(ctx, appointmentID, newDate, newTime, req.AdminNotes, &adminID)
 		if err != nil {
 			return values.Error, fmt.Sprintf("%s [AdRsAp]", values.SystemErr), err
 		}
 		go api.SendRescheduleOfferEmail(appointmentID, newDate, newTime, req.AdminNotes)
 		return values.Success, "Reschedule offer sent successfully", nil
-		
+
 	default:
 		return values.BadRequestBody, "Invalid status", fmt.Errorf("unsupported status: %s", req.Status)
 	}

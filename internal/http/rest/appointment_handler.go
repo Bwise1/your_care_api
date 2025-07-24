@@ -32,7 +32,6 @@ func (api *API) AppointmentRoutes() chi.Router {
 	return mux
 }
 
-
 func (api *API) LabAppointment(_ http.ResponseWriter, r *http.Request) *ServerResponse {
 	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
 
@@ -241,7 +240,6 @@ func (api *API) AdminGetAppointmentDetails(_ http.ResponseWriter, r *http.Reques
 	}
 }
 
-
 func (api *API) AdminConfirmAppointment(_ http.ResponseWriter, r *http.Request) *ServerResponse {
 	tc := r.Context().Value(values.ContextTracingKey).(tracing.Context)
 
@@ -441,6 +439,7 @@ func (api *API) GetAppointmentDetails(_ http.ResponseWriter, r *http.Request) *S
 
 	appointment, status, message, err := api.GetAppointmentDetailsHelper(appointmentID, userID)
 	if err != nil {
+		log.Println(err)
 		return respondWithError(err, message, status, &tc)
 	}
 
