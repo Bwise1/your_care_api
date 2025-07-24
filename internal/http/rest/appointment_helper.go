@@ -66,7 +66,7 @@ func (api *API) CreateLabTestAppointmentH(appointment model.LabAppointmentReq) (
 		// LabTestID: appointment.LabTestID,
 	}
 
-	return newAppointment, values.Created, "Lab test appointment created successfully", nil
+	return newAppointment, values.Success, "Lab test appointment created and is pending approval", nil
 }
 
 func (api *API) CreateLabTestAppointmentHelper(appointment model.AppointmentDetails, labAppt model.LabTestAppointment) (model.AppointmentDetails, string, string, error) {
@@ -95,7 +95,7 @@ func (api *API) CreateLabTestAppointmentHelper(appointment model.AppointmentDeta
 			AdditionalInstructions: labAppt.AdditionalInstructions,
 		},
 	}
-	return newAppointment, values.Created, "Lab test appointment created successfully", nil
+	return newAppointment, values.Success, "Lab test appointment created and is pending approval", nil
 }
 
 func (api *API) FetchAllAppointments(filter model.AppointmentFilter) ([]model.AppointmentDetails, string, string, error) {
